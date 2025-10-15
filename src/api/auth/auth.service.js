@@ -1,7 +1,7 @@
-const db = require("../config/db"); 
+const db = require("../../config/db"); 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const { sendEmail } = require("../utils/sendEmail"); 
+const { sendEmail } = require("../../utils/sendEmail"); 
 require("dotenv").config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
