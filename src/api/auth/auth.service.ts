@@ -1,25 +1,25 @@
-const db = require("../../config/db"); 
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { sendEmail } = require("../../utils/sendEmail"); 
-require("dotenv").config();
+import db from '../../config/db.js'; 
+import bcryptjs from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import sendEmail from '../../utils/sendEmail.js'; 
+import 'dotenv/config'; 
 
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET as string; 
 
-const registerUser = async ({ email, password, full_name }) => {
-  const [users] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+export const registerUser = async ({ email, password, full_name }: { email: string, password: string, full_name: string }) => {
+  const [users]: [any[], any] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
   if (users.length > 0) {
     throw new Error("Email đã tồn tại");
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await bcryptjs.hash(password, 10);
 
-  const [result] = await db.query(
+  const [result]: [any, any] = await db.query(
     "INSERT INTO users (email, password_hash, full_name, role) VALUES (?, ?, ?, 'student')",
     [email, hashedPassword, full_name]
   );
 
-  const [newUser] = await db.query(
+  const [newUser]: [any[], any] = await db.query(
     "SELECT user_id, email, full_name, role FROM users WHERE user_id = ?",
     [result.insertId]
   );
@@ -27,14 +27,14 @@ const registerUser = async ({ email, password, full_name }) => {
   return newUser[0];
 };
 
-const loginUser = async ({ email, password }) => {
-  const [users] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+export const loginUser = async ({ email, password }: { email: string, password: string }) => {
+  const [users]: [any[], any] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
   if (users.length === 0) {
     throw new Error("Email không tồn tại");
   }
 
   const user = users[0];
-  const isMatch = await bcrypt.compare(password, user.password_hash);
+  const isMatch = await bcryptjs.compare(password, user.password_hash);
   if (!isMatch) {
     throw new Error("Sai mật khẩu");
   }
@@ -56,8 +56,8 @@ const loginUser = async ({ email, password }) => {
   };
 };
 
-const forgotPassword = async (email) => {
-    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+export const forgotPassword = async (email: string) => {
+    const [users]: [any[], any] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
     if (users.length === 0) {
         throw new Error("Email không tồn tại");
     }
@@ -74,8 +74,8 @@ const forgotPassword = async (email) => {
     return { message: "OTP đã được gửi qua email" };
 };
 
-const resetPassword = async ({ email, otp, newPassword }) => {
-    const [users] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
+export const resetPassword = async ({ email, otp, newPassword }: { email: string; otp: string; newPassword: string }) => {
+    const [users]: [any[], any] = await db.query("SELECT * FROM users WHERE email = ?", [email]);
     if (users.length === 0) {
         throw new Error("Email không tồn tại");
     }
@@ -85,14 +85,14 @@ const resetPassword = async ({ email, otp, newPassword }) => {
         throw new Error("OTP không hợp lệ hoặc đã hết hạn");
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);
 
     await db.query(
       "UPDATE users SET password_hash = ?, reset_otp = NULL, reset_otp_expires = NULL WHERE email = ?",
       [hashedPassword, email]
     );
     
-    const [updatedUser] = await db.query(
+    const [updatedUser]: [any[], any] = await db.query(
       "SELECT user_id, email, full_name, role FROM users WHERE email = ?",
       [email]
     );
@@ -100,10 +100,3 @@ const resetPassword = async ({ email, otp, newPassword }) => {
     return updatedUser[0];
 };
 
-
-module.exports = {
-  registerUser,
-  loginUser,
-  forgotPassword,
-  resetPassword,
-};
