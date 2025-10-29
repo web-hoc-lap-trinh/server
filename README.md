@@ -15,4 +15,4 @@ JWT_SECRET=your_jwt_secret_key
 ```
 ## Cài đặt các thư viện cần thiết
 
-npm install express mysql2 bcryptjs jsonwebtoken dotenv
+npm install express cors dotenv typeorm reflect-metadata mysql2 bcrypt jsonwebtoken nodemailer swagger-ui-express
