@@ -1,6 +1,6 @@
 import express, { Express, Request, Response } from 'express';
-import { setupSwagger } from './config/swagger.js';
-import authRoutes from './api/auth/auth.route.js';
+import { setupSwagger } from './config/swagger';
+import authRoutes from './api/auth/auth.route';
 
 const app: Express = express();
 
