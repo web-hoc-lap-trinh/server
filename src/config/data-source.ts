@@ -6,7 +6,7 @@ import path from 'path';
 export const AppDataSource = new DataSource({
   type: 'mysql',
   host: process.env.DB_HOST,
-  port: 3306, 
+  port: 3306,
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
@@ -15,6 +15,10 @@ export const AppDataSource = new DataSource({
   entities: [
     path.join(__dirname, '../api/**/*.entity{.ts,.js}'),
   ],
-  migrations: [],
+  migrations: [
+    path.join(__dirname, '../migrations/**/*{.ts,.js}'),
+  ],
   subscribers: [],
+  migrationsTableName: 'migrations',
+  migrationsRun: false, // Sẽ được xử lý thủ công trong server.ts
 });

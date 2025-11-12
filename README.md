@@ -1,18 +1,144 @@
-## Cấu hình môi trường
+# Server - Codery Platform
+
+## 🚀 Cài Đặt và Chạy Project
+
+### 1. Cài đặt dependencies
+
+```bash
+npm install
+```
+
+### 2. Cấu hình môi trường
 
 Tạo file `.env` trong thư mục project:
 
 ```env
-PORT = 4000
+PORT=4000
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=Codery
+DB_NAME=codery
 DB_USER=root
 DB_PASSWORD=
 EMAIL_USER=hoanghaiyencbm@gmail.com
 EMAIL_PASS=pasg luny ewru rmwq
 JWT_SECRET=your_jwt_secret_key
+NODE_ENV=development
 ```
-## Cài đặt các thư viện cần thiết
 
-npm install express cors dotenv typeorm reflect-metadata mysql2 bcrypt jsonwebtoken nodemailer swagger-ui-express
+### 3. Chạy project
+
+```bash
+# Development mode (migrations tự động chạy)
+npm run dev
+
+# Production mode
+npm run build
+npm start
+```
+
+**Lưu ý:** Database sẽ được **tự động tạo** nếu chưa tồn tại. Không cần tạo database thủ công!
+
+## 📦 Database Migrations
+
+Project này sử dụng **TypeORM Migrations** để quản lý database thay vì file SQL thuần.
+
+### Ưu điểm:
+- ✅ Tự động chạy khi start server
+- ✅ Không chạy lại migrations đã thực thi
+- ✅ Tự động chạy migrations mới nếu chưa chạy
+- ✅ Dễ dàng rollback và quản lý phiên bản
+
+### Quick Start:
+
+```bash
+# Xem trạng thái migrations
+npm run migration:show
+
+# Chạy migrations thủ công
+npm run migration:run
+
+# Tạo migration mới
+npm run migration:create src/migrations/TenMigration
+
+# Quay lại migration trước
+npm run migration:revert
+```
+
+### 📖 Tài liệu chi tiết:
+- [MIGRATION.md](./MIGRATION.md) - Hướng dẫn đầy đủ về migrations
+- [MIGRATION_QUICKSTART.md](./MIGRATION_QUICKSTART.md) - Hướng dẫn nhanh
+
+## 📁 Cấu Trúc Project
+
+```
+server/
+├── src/
+│   ├── api/                    # API routes và controllers
+│   │   └── auth/              # Authentication module
+│   ├── config/                # Cấu hình
+│   │   ├── data-source.ts     # TypeORM DataSource
+│   │   └── swagger.ts         # Swagger config
+│   ├── middlewares/           # Middlewares
+│   ├── migrations/            # 📦 Database migrations
+│   ├── types/                 # TypeScript types
+│   ├── utils/                 # Utilities
+│   ├── app.ts                 # Express app
+│   └── server.ts              # Server entry point
+├── ormconfig.ts               # TypeORM CLI config
+├── MIGRATION.md               # Migration guide
+└── package.json
+```
+
+## 🔧 Scripts Có Sẵn
+
+```bash
+npm run dev              # Chạy development server
+npm run build            # Build TypeScript sang JavaScript
+npm start                # Chạy production server
+npm run migration:run    # Chạy migrations
+npm run migration:show   # Xem trạng thái migrations
+npm run migration:create # Tạo migration mới
+npm run migration:revert # Rollback migration
+```
+
+## 📚 Thư viện sử dụng
+
+- **Express** - Web framework
+- **TypeORM** - ORM và migrations
+- **MySQL2** - MySQL driver
+- **bcryptjs** - Password hashing
+- **jsonwebtoken** - JWT authentication
+- **nodemailer** - Email service
+- **Swagger** - API documentation
+- **TypeScript** - Type safety
+
+## ⚠️ Lưu Ý Quan Trọng
+
+### Migration Tự Động
+- Khi chạy `npm run dev`, migrations sẽ **tự động chạy**
+- Chỉ migrations **chưa chạy** mới được thực thi
+- Database được tạo tự động, không cần import file SQL
+
+### Database Schema
+- **KHÔNG** sử dụng file `codery.sql` nữa
+- Tất cả schema được quản lý qua migrations trong `src/migrations/`
+- Mọi thay đổi database phải tạo migration mới
+
+## 🆘 Troubleshooting
+
+Nếu gặp lỗi khi chạy migrations, xem:
+- [MIGRATION.md - Troubleshooting](./MIGRATION.md#troubleshooting)
+
+Hoặc chạy lại từ đầu:
+```bash
+# Xóa database cũ
+DROP DATABASE codery;
+CREATE DATABASE codery;
+
+# Chạy lại server
+npm run dev
+```
+
+---
+
+**Happy Coding! 🎉**
