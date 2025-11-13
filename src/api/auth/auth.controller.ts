@@ -48,3 +48,24 @@ export const resetPassword = async (req: Request, res: Response) => {
     res.status(400).json({ message: err.message });
   }
 };
+
+export const adminLogin = async (req: Request, res: Response) => {
+  try {
+    const data = await authService.adminLogin(req.body);
+    res.json({
+      message: 'Admin đăng nhập thành công',
+      ...data,
+    });
+  } catch (err: any) {
+    // Phân biệt lỗi 401 (sai quyền, sai mk) và 500
+    res
+      .status(
+        err.message === 'Email không tồn tại' ||
+          err.message === 'Tài khoản không có quyền Admin' ||
+          err.message === 'Sai mật khẩu'
+          ? 401
+          : 500
+      )
+      .json({ message: err.message });
+  }
+};

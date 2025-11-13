@@ -131,3 +131,46 @@ export const resetPassword = async ({
   const { password_hash, reset_otp, reset_otp_expires, ...result } = user;
   return result;
 };
+export const adminLogin = async ({
+  email,
+  password,
+}: {
+  email: string;
+  password: string;
+}) => {
+  const user = await userRepository
+    .createQueryBuilder('user')
+    .where('user.email = :email', { email })
+    .addSelect('user.password_hash') // Lấy password_hash để so sánh
+    .getOne();
+
+  // 1. Kiểm tra email có tồn tại không
+  if (!user) {
+    throw new Error('Email không tồn tại');
+  }
+
+  // 2. KIỂM TRA QUYỀN ADMIN
+  if (user.role !== 'admin') {
+    throw new Error('Tài khoản không có quyền Admin');
+  }
+
+  // 3. Kiểm tra mật khẩu
+  const isMatch = await bcryptjs.compare(password, user.password_hash);
+  if (!isMatch) {
+    throw new Error('Sai mật khẩu');
+  }
+
+  // 4. Tạo token
+  const token = jwt.sign(
+    { user_id: user.user_id, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '1d' }
+  );
+
+  // 5. Trả về kết quả (loại bỏ các trường nhạy cảm)
+  const { password_hash, reset_otp, reset_otp_expires, ...userResult } = user;
+  return {
+    token,
+    user: userResult,
+  };
+};

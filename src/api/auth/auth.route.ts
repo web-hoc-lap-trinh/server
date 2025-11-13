@@ -154,6 +154,33 @@ router.post('/login', authController.login);
  *       400:
  *         description: Email không tồn tại
  */
+/**
+ * @swagger
+ * /api/auth/admin/login:
+ *   post:
+ *     summary: Đăng nhập cho Admin
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginInput'
+ *     responses:
+ *       200:
+ *         description: Admin đăng nhập thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       401:
+ *         description: Sai email, mật khẩu hoặc không có quyền
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post('/admin/login', authController.adminLogin);
 router.post('/forgot-password', authController.forgotPassword);
 
 /**
