@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import * as authController from './auth.controller';
-
+import { authMiddleware } from '../../middlewares/auth.middleware';
 const router = Router();
 
 /**
@@ -247,5 +247,107 @@ router.post('/forgot-password', authController.forgotPassword);
  *         description: OTP không hợp lệ hoặc hết hạnnp
  */
 router.post('/reset-password', authController.resetPassword);
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   get:
+ *     summary: Lấy thông tin profile
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Thông tin user
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.get('/profile', authMiddleware, authController.getProfile);
+
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   put:
+ *     summary: Cập nhật profile (tên, avatar)
+ *     description: Chỉ cho phép cập nhật full_name và avatar_url. Các trường khác (email, password) sẽ bị bỏ qua.
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               full_name:
+ *                 type: string
+ *               avatar_url:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.put('/profile', authMiddleware, authController.updateProfile);
+
+/**
+ * @swagger
+ * /api/auth/profile/request-password-change:
+ *   post:
+ *     summary: Yêu cầu gửi OTP để đổi mật khẩu
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Đã gửi OTP qua email
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.post(
+  '/profile/request-password-change',
+  authMiddleware,
+  authController.requestChangePassword
+);
+
+/**
+ * @swagger
+ * /api/auth/profile/verify-password-change:
+ *   post:
+ *     summary: Xác thực OTP và đổi mật khẩu mới
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               otp:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *     responses:
+ *       200:
+ *         description: Đổi mật khẩu thành công
+ *       400:
+ *         description: OTP không hợp lệ hoặc thiếu thông tin
+ *       401:
+ *         description: Chưa đăng nhập
+ */
+router.post(
+  '/profile/verify-password-change',
+  authMiddleware,
+  authController.verifyChangePassword
+);
 
 export default router;

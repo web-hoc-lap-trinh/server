@@ -91,3 +91,54 @@ export const adminLogin = async (req: Request, res: Response) => {
       .json({ message: err.message });
   }
 };
+
+export const getProfile = async (req: Request, res: Response) => {
+  try {
+    const user = await authService.getProfile(req.user!.user_id);
+    res.json(user);
+  } catch (err: any) {
+    res.status(404).json({ message: err.message });
+  }
+};
+
+
+export const updateProfile = async (req: Request, res: Response) => {
+  try {
+    const { email, password, role, ...updateData } = req.body;
+    
+    const user = await authService.updateProfile(req.user!.user_id, updateData);
+    res.json({
+      message: 'Cập nhật profile thành công',
+      user: user,
+    });
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const requestChangePassword = async (req: Request, res: Response) => {
+  try {
+    const result = await authService.requestChangePasswordOtp(req.user!.user_id);
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+export const verifyChangePassword = async (req: Request, res: Response) => {
+  try {
+    const { otp, newPassword } = req.body;
+    if (!otp || !newPassword) {
+      return res.status(400).json({ message: 'Thiếu OTP hoặc mật khẩu mới' });
+    }
+    
+    const result = await authService.verifyChangePassword(
+      req.user!.user_id,
+      otp,
+      newPassword
+    );
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ message: err.message });
+  }
+};

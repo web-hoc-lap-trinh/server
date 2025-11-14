@@ -18,6 +18,8 @@ export class InitialSchema1700000000000 implements MigrationInterface {
         \`last_active\` datetime DEFAULT NULL,
         \`reset_otp\` varchar(10) DEFAULT NULL,
         \`reset_otp_expires\` datetime DEFAULT NULL,
+        \`change_password_otp\` varchar(10) DEFAULT NULL,
+        \`change_password_otp_expires\` datetime DEFAULT NULL,
         \`is_verified\` tinyint(1) DEFAULT 0,
         \`verification_otp\` varchar(10) DEFAULT NULL,
         \`verification_otp_expires\` datetime DEFAULT NULL,
