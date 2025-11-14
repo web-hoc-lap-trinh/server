@@ -2,7 +2,7 @@ import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class InitialSchema1700000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Tạo bảng users
+// Tạo bảng users 
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS \`users\` (
         \`user_id\` int(11) NOT NULL AUTO_INCREMENT,
@@ -18,6 +18,9 @@ export class InitialSchema1700000000000 implements MigrationInterface {
         \`last_active\` datetime DEFAULT NULL,
         \`reset_otp\` varchar(10) DEFAULT NULL,
         \`reset_otp_expires\` datetime DEFAULT NULL,
+        \`is_verified\` tinyint(1) DEFAULT 0,
+        \`verification_otp\` varchar(10) DEFAULT NULL,
+        \`verification_otp_expires\` datetime DEFAULT NULL,
         \`created_at\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
         \`updated_at\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (\`user_id\`),

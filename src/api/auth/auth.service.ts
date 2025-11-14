@@ -1,5 +1,5 @@
-import { AppDataSource } from '../../config/data-source'; 
-import { User } from './user.entity'; 
+import { AppDataSource } from '../../config/data-source';
+import { User } from './user.entity';
 import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../../utils/sendEmail';
@@ -7,6 +7,10 @@ import 'dotenv/config';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const userRepository = AppDataSource.getRepository(User);
+
+const generateOtp = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
 
 export const registerUser = async ({
   email,
@@ -23,18 +27,128 @@ export const registerUser = async ({
   }
 
   const hashedPassword = await bcryptjs.hash(password, 10);
+  const otp = generateOtp();
+  const expires = new Date(Date.now() + 10 * 60 * 1000);
 
   const user = userRepository.create({
     email,
     password_hash: hashedPassword,
     full_name,
     role: 'student',
+    is_verified: false,
+    verification_otp: otp,
+    verification_otp_expires: expires,
   });
 
   await userRepository.save(user);
 
-  const { password_hash, reset_otp, reset_otp_expires, ...result } = user;
-  return result;
+  await sendEmail(
+    email,
+    'Chào mừng bạn đến với Codery - Xác thực tài khoản',
+    `Mã OTP xác thực tài khoản của bạn là: ${otp}. Mã này sẽ hết hạn sau 10 phút.`
+  );
+
+  return { message: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã OTP.' };
+};
+
+export const verifyAccount = async ({
+  email,
+  otp,
+}: {
+  email: string;
+  otp: string;
+}) => {
+  const user = await userRepository
+    .createQueryBuilder('user')
+    .where('user.email = :email', { email })
+    .addSelect([
+      'user.verification_otp',
+      'user.verification_otp_expires',
+      'user.is_verified',
+    ])
+    .getOne();
+
+  if (!user) {
+    throw new Error('Email không tồn tại');
+  }
+
+  if (user.is_verified) {
+    throw new Error('Tài khoản đã được xác thực trước đó.');
+  }
+
+  if (
+    user.verification_otp !== otp ||
+    !user.verification_otp_expires ||
+    new Date(user.verification_otp_expires) < new Date()
+  ) {
+    throw new Error('OTP không hợp lệ hoặc đã hết hạn');
+  }
+
+  await userRepository.update(
+    { user_id: user.user_id },
+    {
+      is_verified: true,
+      verification_otp: null,
+      verification_otp_expires: null,
+    }
+  );
+
+  const token = jwt.sign(
+    { user_id: user.user_id, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '1d' }
+  );
+
+  const {
+    password_hash,
+    reset_otp,
+    reset_otp_expires,
+    verification_otp,
+    verification_otp_expires,
+    ...userResult
+  } = user;
+
+  (userResult as User).is_verified = true;
+
+  return {
+    token,
+    user: userResult,
+  };
+};
+
+export const resendVerificationOtp = async (email: string) => {
+  const user = await userRepository
+    .createQueryBuilder('user')
+    .where('user.email = :email', { email })
+    .addSelect(['user.is_verified'])
+    .getOne();
+
+  if (!user) {
+    throw new Error('Email không tồn tại');
+  }
+
+  if (user.is_verified) {
+    throw new Error('Tài khoản đã được xác thực.');
+  }
+
+  const otp = generateOtp();
+  const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+  await userRepository.update(
+    { user_id: user.user_id },
+    {
+      verification_otp: otp,
+      verification_otp_expires: expires,
+    }
+  );
+
+  await sendEmail(
+    email,
+    'Mã OTP xác thực tài khoản Codery (Gửi lại)',
+    `Mã OTP mới của bạn là: ${otp}. Mã này sẽ hết hạn sau 10 phút.`
+  );
+
+  return { message: 'Đã gửi lại OTP. Vui lòng kiểm tra email.' };
 };
 
 export const loginUser = async ({
@@ -47,7 +161,7 @@ export const loginUser = async ({
   const user = await userRepository
     .createQueryBuilder('user')
     .where('user.email = :email', { email })
-    .addSelect('user.password_hash')
+    .addSelect(['user.password_hash', 'user.is_verified'])
     .getOne();
 
   if (!user) {
@@ -59,13 +173,25 @@ export const loginUser = async ({
     throw new Error('Sai mật khẩu');
   }
 
+  if (!user.is_verified) {
+    throw new Error('Tài khoản chưa được xác thực. Vui lòng kiểm tra email.');
+  }
+
   const token = jwt.sign(
     { user_id: user.user_id, role: user.role },
     JWT_SECRET,
     { expiresIn: '1d' }
   );
 
-  const { password_hash, ...userResult } = user;
+  const {
+    password_hash,
+    reset_otp,
+    reset_otp_expires,
+    verification_otp,
+    verification_otp_expires,
+    ...userResult
+  } = user;
+
   return {
     token,
     user: userResult,
@@ -79,11 +205,11 @@ export const forgotPassword = async (email: string) => {
   }
 
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
-  const expires = new Date(Date.now() + 5 * 60 * 1000); 
+  const expires = new Date(Date.now() + 5 * 60 * 1000);
 
   await userRepository.update(
     { email },
-    { reset_otp: otp, reset_otp_expires: expires } 
+    { reset_otp: otp, reset_otp_expires: expires }
   );
 
   await sendEmail(email, 'Reset mật khẩu', `Mã OTP của bạn là: ${otp}`);
@@ -131,6 +257,7 @@ export const resetPassword = async ({
   const { password_hash, reset_otp, reset_otp_expires, ...result } = user;
   return result;
 };
+
 export const adminLogin = async ({
   email,
   password,
@@ -141,33 +268,28 @@ export const adminLogin = async ({
   const user = await userRepository
     .createQueryBuilder('user')
     .where('user.email = :email', { email })
-    .addSelect('user.password_hash') // Lấy password_hash để so sánh
+    .addSelect('user.password_hash')
     .getOne();
 
-  // 1. Kiểm tra email có tồn tại không
   if (!user) {
     throw new Error('Email không tồn tại');
   }
 
-  // 2. KIỂM TRA QUYỀN ADMIN
   if (user.role !== 'admin') {
     throw new Error('Tài khoản không có quyền Admin');
   }
 
-  // 3. Kiểm tra mật khẩu
   const isMatch = await bcryptjs.compare(password, user.password_hash);
   if (!isMatch) {
     throw new Error('Sai mật khẩu');
   }
 
-  // 4. Tạo token
   const token = jwt.sign(
     { user_id: user.user_id, role: user.role },
     JWT_SECRET,
     { expiresIn: '1d' }
   );
 
-  // 5. Trả về kết quả (loại bỏ các trường nhạy cảm)
   const { password_hash, reset_otp, reset_otp_expires, ...userResult } = user;
   return {
     token,

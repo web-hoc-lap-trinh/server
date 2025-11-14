@@ -51,6 +51,15 @@ export class User {
 
   @Column({ type: 'datetime', nullable: true, select: false })
   reset_otp_expires!: Date | null; 
+  
+  @Column({ type: 'boolean', default: false })
+  is_verified!: boolean;
+
+  @Column({ type: 'varchar', length: 10, nullable: true, select: false })
+  verification_otp!: string | null;
+
+  @Column({ type: 'datetime', nullable: true, select: false })
+  verification_otp_expires!: Date | null;
 
   @CreateDateColumn()
   created_at!: Date;

@@ -66,16 +66,16 @@ const router = Router();
  *         message:
  *           type: string
  *
- * tags:
- *   - name: Auth
- *     description: API xác thực người dùng
+ *   tags:
+ *     - name: Auth
+ *       description: API xác thực người dùng
  */
 
 /**
  * @swagger
  * /api/auth/register:
  *   post:
- *     summary: Đăng ký tài khoản student mới
+ *     summary: Đăng ký và gửi OTP xác thực
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -85,7 +85,7 @@ const router = Router();
  *             $ref: '#/components/schemas/RegisterInput'
  *     responses:
  *       201:
- *         description: Đăng ký thành công
+ *         description: Đăng ký thành công, chờ xác thực
  *         content:
  *           application/json:
  *             schema:
@@ -93,22 +93,71 @@ const router = Router();
  *               properties:
  *                 message:
  *                   type: string
- *                 user:
- *                   $ref: '#/components/schemas/User'
+ *                   example: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã OTP.'
  *       400:
  *         description: Email đã tồn tại
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/register', authController.register);
 
 /**
  * @swagger
+ * /api/auth/verify-account:
+ *   post:
+ *     summary: Xác thực tài khoản bằng OTP
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               otp:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Xác thực thành công (tự động đăng nhập)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LoginResponse'
+ *       400:
+ *         description: OTP không hợp lệ hoặc hết hạn
+ */
+router.post('/verify-account', authController.verifyAccount);
+
+/**
+ * @swagger
+ * /api/auth/resend-otp:
+ *   post:
+ *     summary: Gửi lại OTP xác thực
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Đã gửi lại OTP
+ *       400:
+ *         description: Email không tồn tại hoặc tài khoản đã xác thực
+ */
+router.post('/resend-otp', authController.resendVerificationOtp);
+
+/**
+ * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Đăng nhập
+ *     summary: Đăng nhập (chỉ cho tài khoản đã xác thực)
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -119,18 +168,32 @@ router.post('/register', authController.register);
  *     responses:
  *       200:
  *         description: Đăng nhập thành công
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
- *       400:
+ *       401:
  *         description: Sai email hoặc mật khẩu
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Tài khoản chưa được xác thực
  */
 router.post('/login', authController.login);
+
+/**
+ * @swagger
+ * /api/auth/admin/login:
+ *   post:
+ *     summary: Đăng nhập cho Admin
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LoginInput'
+ *     responses:
+ *       200:
+ *         description: Admin đăng nhập thành công
+ *       401:
+ *         description: Sai email, mật khẩu hoặc không có quyền
+ */
+router.post('/admin/login', authController.adminLogin);
 
 /**
  * @swagger
@@ -154,33 +217,6 @@ router.post('/login', authController.login);
  *       400:
  *         description: Email không tồn tại
  */
-/**
- * @swagger
- * /api/auth/admin/login:
- *   post:
- *     summary: Đăng nhập cho Admin
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LoginInput'
- *     responses:
- *       200:
- *         description: Admin đăng nhập thành công
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
- *       401:
- *         description: Sai email, mật khẩu hoặc không có quyền
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- */
-router.post('/admin/login', authController.adminLogin);
 router.post('/forgot-password', authController.forgotPassword);
 
 /**
@@ -208,7 +244,7 @@ router.post('/forgot-password', authController.forgotPassword);
  *       200:
  *         description: Đặt lại mật khẩu thành công
  *       400:
- *         description: OTP không hợp lệ hoặc hết hạn
+ *         description: OTP không hợp lệ hoặc hết hạnnp
  */
 router.post('/reset-password', authController.resetPassword);
 
