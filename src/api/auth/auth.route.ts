@@ -69,6 +69,8 @@ const router = Router();
  *   tags:
  *     - name: Auth
  *       description: API xác thực người dùng
+ *     - name: Profile
+ *       description: API quản lý thông tin cá nhân
  */
 
 /**
@@ -91,9 +93,14 @@ const router = Router();
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
  *                 message:
  *                   type: string
  *                   example: 'Đăng ký thành công. Vui lòng kiểm tra email để lấy mã OTP.'
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
  *       400:
  *         description: Email đã tồn tại
  */
@@ -123,7 +130,19 @@ router.post('/register', authController.register);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/LoginResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
  *       400:
  *         description: OTP không hợp lệ hoặc hết hạn
  */
@@ -157,7 +176,7 @@ router.post('/resend-otp', authController.resendVerificationOtp);
  * @swagger
  * /api/auth/login:
  *   post:
- *     summary: Đăng nhập (chỉ cho tài khoản đã xác thực)
+ *     summary: Đăng nhập (cả student và admin)
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -168,32 +187,33 @@ router.post('/resend-otp', authController.resendVerificationOtp);
  *     responses:
  *       200:
  *         description: Đăng nhập thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 'Đăng nhập thành công'
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
  *       401:
  *         description: Sai email hoặc mật khẩu
  *       403:
- *         description: Tài khoản chưa được xác thực
+ *         description: Tài khoản student chưa được xác thực
  */
 router.post('/login', authController.login);
-
-/**
- * @swagger
- * /api/auth/admin/login:
- *   post:
- *     summary: Đăng nhập cho Admin
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LoginInput'
- *     responses:
- *       200:
- *         description: Admin đăng nhập thành công
- *       401:
- *         description: Sai email, mật khẩu hoặc không có quyền
- */
-router.post('/admin/login', authController.adminLogin);
 
 /**
  * @swagger
@@ -244,110 +264,9 @@ router.post('/forgot-password', authController.forgotPassword);
  *       200:
  *         description: Đặt lại mật khẩu thành công
  *       400:
- *         description: OTP không hợp lệ hoặc hết hạnnp
+ *         description: OTP không hợp lệ hoặc hết hạn
  */
 router.post('/reset-password', authController.resetPassword);
-
-/**
- * @swagger
- * /api/auth/profile:
- *   get:
- *     summary: Lấy thông tin profile
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Thông tin user
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       401:
- *         description: Chưa đăng nhập
- */
-router.get('/profile', authMiddleware, authController.getProfile);
-
-/**
- * @swagger
- * /api/auth/profile:
- *   put:
- *     summary: Cập nhật profile (tên, avatar)
- *     description: Chỉ cho phép cập nhật full_name và avatar_url. Các trường khác (email, password) sẽ bị bỏ qua.
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               full_name:
- *                 type: string
- *               avatar_url:
- *                 type: string
- *     responses:
- *       200:
- *         description: Cập nhật thành công
- *       401:
- *         description: Chưa đăng nhập
- */
-router.put('/profile', authMiddleware, authController.updateProfile);
-
-/**
- * @swagger
- * /api/auth/profile/request-password-change:
- *   post:
- *     summary: Yêu cầu gửi OTP để đổi mật khẩu
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Đã gửi OTP qua email
- *       401:
- *         description: Chưa đăng nhập
- */
-router.post(
-  '/profile/request-password-change',
-  authMiddleware,
-  authController.requestChangePassword
-);
-
-/**
- * @swagger
- * /api/auth/profile/verify-password-change:
- *   post:
- *     summary: Xác thực OTP và đổi mật khẩu mới
- *     tags: [Auth]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               otp:
- *                 type: string
- *               newPassword:
- *                 type: string
- *                 format: password
- *     responses:
- *       200:
- *         description: Đổi mật khẩu thành công
- *       400:
- *         description: OTP không hợp lệ hoặc thiếu thông tin
- *       401:
- *         description: Chưa đăng nhập
- */
-router.post(
-  '/profile/verify-password-change',
-  authMiddleware,
-  authController.verifyChangePassword
-);
+// Profile routes have been moved to a dedicated router mounted at /api/profile
 
 export default router;

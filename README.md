@@ -1,5 +1,23 @@
 # Server - Codery Platform
 
+## ✨ Recent Updates (November 2024)
+
+### 🎯 API Standardization & Advanced Exception Handling
+- ✅ **Standardized API Response Format** - All endpoints return consistent JSON structure
+- ✅ **Advanced Exception Handling** - Centralized error handling with custom error classes
+- ✅ **Simplified Routes** - Removed `/auth` prefix from all endpoints
+- ✅ **Unified Login** - Single `/api/login` endpoint for both students and admins
+- ✅ **Password Change without OTP** - Change password using old password verification
+- ✅ **Full TypeScript Support** - Type-safe error handling and responses
+
+📖 **Documentation:**
+- [API_STANDARDIZATION.md](./API_STANDARDIZATION.md) - Complete API standardization guide
+- [QUICK_REFERENCE.md](./QUICK_REFERENCE.md) - Quick API reference
+- [TESTING_GUIDE.md](./TESTING_GUIDE.md) - Testing guide with examples
+- [CHANGES_SUMMARY.md](./CHANGES_SUMMARY.md) - Summary of all changes
+
+---
+
 ## 🚀 Cài Đặt và Chạy Project
 
 ### 1. Cài đặt dependencies

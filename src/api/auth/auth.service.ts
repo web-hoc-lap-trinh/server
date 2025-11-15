@@ -4,6 +4,13 @@ import bcryptjs from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendEmail from '../../utils/sendEmail';
 import 'dotenv/config';
+import {
+  BadRequestError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ConflictError,
+} from '../../utils/apiResponse';
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
 const userRepository = AppDataSource.getRepository(User);
@@ -23,7 +30,7 @@ export const registerUser = async ({
 }) => {
   const existingUser = await userRepository.findOne({ where: { email } });
   if (existingUser) {
-    throw new Error('Email đã tồn tại');
+    throw new ConflictError('Email đã tồn tại');
   }
 
   const hashedPassword = await bcryptjs.hash(password, 10);
@@ -69,11 +76,11 @@ export const verifyAccount = async ({
     .getOne();
 
   if (!user) {
-    throw new Error('Email không tồn tại');
+    throw new NotFoundError('Email không tồn tại');
   }
 
   if (user.is_verified) {
-    throw new Error('Tài khoản đã được xác thực trước đó.');
+    throw new BadRequestError('Tài khoản đã được xác thực trước đó.');
   }
 
   if (
@@ -81,7 +88,7 @@ export const verifyAccount = async ({
     !user.verification_otp_expires ||
     new Date(user.verification_otp_expires) < new Date()
   ) {
-    throw new Error('OTP không hợp lệ hoặc đã hết hạn');
+    throw new BadRequestError('OTP không hợp lệ hoặc đã hết hạn');
   }
 
   await userRepository.update(
@@ -126,11 +133,11 @@ export const resendVerificationOtp = async (email: string) => {
     .getOne();
 
   if (!user) {
-    throw new Error('Email không tồn tại');
+    throw new NotFoundError('Email không tồn tại');
   }
 
   if (user.is_verified) {
-    throw new Error('Tài khoản đã được xác thực.');
+    throw new BadRequestError('Tài khoản đã được xác thực.');
   }
 
   const otp = generateOtp();
@@ -167,16 +174,17 @@ export const loginUser = async ({
     .getOne();
 
   if (!user) {
-    throw new Error('Email không tồn tại');
+    throw new NotFoundError('Email không tồn tại');
   }
 
   const isMatch = await bcryptjs.compare(password, user.password_hash);
   if (!isMatch) {
-    throw new Error('Sai mật khẩu');
+    throw new UnauthorizedError('Sai mật khẩu');
   }
 
-  if (!user.is_verified) {
-    throw new Error('Tài khoản chưa được xác thực. Vui lòng kiểm tra email.');
+  // Only students need to be verified, admins can login without verification
+  if (user.role === 'student' && !user.is_verified) {
+    throw new ForbiddenError('Tài khoản chưa được xác thực. Vui lòng kiểm tra email.');
   }
 
   const token = jwt.sign(
@@ -205,7 +213,7 @@ export const loginUser = async ({
 export const forgotPassword = async (email: string) => {
   const user = await userRepository.findOne({ where: { email } });
   if (!user) {
-    throw new Error('Email không tồn tại');
+    throw new NotFoundError('Email không tồn tại');
   }
 
   const otp = Math.floor(1000 + Math.random() * 9000).toString();
@@ -236,7 +244,7 @@ export const resetPassword = async ({
     .getOne();
 
   if (!user) {
-    throw new Error('Email không tồn tại');
+    throw new NotFoundError('Email không tồn tại');
   }
 
   if (
@@ -244,7 +252,7 @@ export const resetPassword = async ({
     !user.reset_otp_expires ||
     new Date(user.reset_otp_expires) < new Date()
   ) {
-    throw new Error('OTP không hợp lệ hoặc đã hết hạn');
+    throw new BadRequestError('OTP không hợp lệ hoặc đã hết hạn');
   }
 
   const hashedPassword = await bcryptjs.hash(newPassword, 10);
@@ -271,153 +279,3 @@ export const resetPassword = async ({
   return result;
 };
 
-export const adminLogin = async ({
-  email,
-  password,
-}: {
-  email: string;
-  password: string;
-}) => {
-  const user = await userRepository
-    .createQueryBuilder('user')
-    .where('user.email = :email', { email })
-    .addSelect('user.password_hash')
-    .getOne();
-
-  if (!user) {
-    throw new Error('Email không tồn tại');
-  }
-
-  if (user.role !== 'admin') {
-    throw new Error('Tài khoản không có quyền Admin');
-  }
-
-  const isMatch = await bcryptjs.compare(password, user.password_hash);
-  if (!isMatch) {
-    throw new Error('Sai mật khẩu');
-  }
-
-  const token = jwt.sign(
-    { user_id: user.user_id, role: user.role },
-    JWT_SECRET,
-    { expiresIn: '1d' }
-  );
-
-  const { 
-    password_hash, 
-    reset_otp, 
-    reset_otp_expires,
-    verification_otp,
-    verification_otp_expires,
-    change_password_otp,
-    change_password_otp_expires,
-    ...userResult 
-  } = user;
-  return {
-    token,
-    user: userResult,
-  };
-};
-
-export const getProfile = async (userId: number) => {
-  const user = await userRepository.findOne({ where: { user_id: userId } });
-  if (!user) {
-    throw new Error('Không tìm thấy người dùng');
-  }
-  const { 
-    password_hash, 
-    reset_otp, 
-    reset_otp_expires, 
-    verification_otp, 
-    verification_otp_expires, 
-    change_password_otp, 
-    change_password_otp_expires, 
-    ...result 
-  } = user;
-  return result;
-};
-
-export const updateProfile = async (userId: number, body: { full_name?: string; avatar_url?: string }) => {
-  
-  const updateData: { full_name?: string; avatar_url?: string } = {};
-  if (body.full_name) {
-    updateData.full_name = body.full_name;
-  }
-  if (body.avatar_url) {
-    updateData.avatar_url = body.avatar_url;
-  }
-
-  if (Object.keys(updateData).length === 0) {
-    throw new Error('Không có thông tin hợp lệ để cập nhật.');
-  }
-
-  await userRepository.update({ user_id: userId }, updateData);
-  
-  return getProfile(userId);
-};
-
-export const requestChangePasswordOtp = async (userId: number) => {
-  const user = await userRepository.findOne({ where: { user_id: userId } });
-  if (!user) {
-    throw new Error('Không tìm thấy người dùng');
-  }
-
-  const otp = generateOtp();
-  const expires = new Date(Date.now() + 5 * 60 * 1000);
-
-  await userRepository.update(
-    { user_id: userId },
-    {
-      change_password_otp: otp,
-      change_password_otp_expires: expires,
-    }
-  );
-
-  await sendEmail(
-    user.email,
-    'Xác nhận thay đổi mật khẩu Codery',
-    `Mã OTP để thay đổi mật khẩu của bạn là: ${otp}. Mã này sẽ hết hạn sau 5 phút.`
-  );
-
-  return { message: 'Đã gửi OTP xác nhận qua email.' };
-};
-
-export const verifyChangePassword = async (
-  userId: number,
-  otp: string,
-  newPassword: string
-) => {
-  const user = await userRepository
-    .createQueryBuilder('user')
-    .where('user.user_id = :userId', { userId })
-    .addSelect([
-      'user.change_password_otp',
-      'user.change_password_otp_expires',
-    ])
-    .getOne();
-
-  if (!user) {
-    throw new Error('Không tìm thấy người dùng');
-  }
-
-  if (
-    user.change_password_otp !== otp ||
-    !user.change_password_otp_expires ||
-    new Date(user.change_password_otp_expires) < new Date()
-  ) {
-    throw new Error('OTP không hợp lệ hoặc đã hết hạn');
-  }
-
-  const hashedPassword = await bcryptjs.hash(newPassword, 10);
-
-  await userRepository.update(
-    { user_id: userId },
-    {
-      password_hash: hashedPassword,
-      change_password_otp: null,
-      change_password_otp_expires: null,
-    }
-  );
-
-  return { message: 'Thay đổi mật khẩu thành công.' };
-};
