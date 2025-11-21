@@ -64,6 +64,34 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
 /**
  * @swagger
  * /api/categories/{categoryId}:
+ *   get:
+ *     summary: "Lấy chi tiết một Chủ đề"
+ *     tags: [Category]
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID của Chủ đề
+ *     responses:
+ *       200:
+ *         description: Chi tiết chủ đề
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Category fetched successfully
+ *                 data:
+ *                   $ref: '#/components/schemas/Category'
+ *       404:
+ *         description: Không tìm thấy Chủ đề
  *   put:
  *     summary: "[ADMIN] Cập nhật thông tin Chủ đề"
  *     tags: [Category]
@@ -129,6 +157,7 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *       404:
  *         description: Không tìm thấy Chủ đề
  */
+router.get('/:categoryId', categoryController.getCategory);
 router.put('/:categoryId', authMiddleware, checkAdmin, categoryController.updateCategory);
 router.delete('/:categoryId', authMiddleware, checkAdmin, categoryController.deleteCategory);
 

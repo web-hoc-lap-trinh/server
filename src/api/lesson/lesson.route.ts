@@ -19,6 +19,19 @@ const router = Router();
  *           example: Lesson fetched successfully
  *         data:
  *           $ref: '#/components/schemas/Lesson'
+ *     LessonListResponse:
+ *       type: object
+ *       properties:
+ *         success:
+ *           type: boolean
+ *           example: true
+ *         message:
+ *           type: string
+ *           example: Lessons fetched successfully
+ *         data:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Lesson'
  *     MessageResponse:
  *       type: object
  *       properties:
@@ -29,6 +42,52 @@ const router = Router();
  *           type: string
  *           example: Xóa Bài học thành công.
  */
+
+/**
+ * @swagger
+ * /api/lessons:
+ *   get:
+ *     summary: Lấy danh sách tất cả các Bài học đã xuất bản (public)
+ *     tags: [Lesson]
+ *     responses:
+ *       200:
+ *         description: Danh sách bài học
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LessonListResponse'
+ *   post:
+ *     summary: "[ADMIN] Tạo mới một Bài học"
+ *     tags: [Lesson]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/LessonInput'
+ *     responses:
+ *       201:
+ *         description: Tạo mới thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Tạo Bài học thành công
+ *                 data:
+ *                   $ref: '#/components/schemas/Lesson'
+ *       403:
+ *         description: Không có quyền Admin
+ */
+router.get('/', lessonController.getLessons);
+router.post('/', authMiddleware, checkAdmin, lessonController.createLesson);
 
 /**
  * @swagger
@@ -52,7 +111,6 @@ const router = Router();
  *               $ref: '#/components/schemas/LessonResponse'
  *       404:
  *         description: Bài học không tồn tại hoặc chưa xuất bản
- *
  *   put:
  *     summary: "[ADMIN] Cập nhật Bài học"
  *     tags: [Lesson]
@@ -89,7 +147,6 @@ const router = Router();
  *                   $ref: '#/components/schemas/Lesson'
  *       403:
  *         description: Không có quyền Admin
- *
  *   delete:
  *     summary: "[ADMIN] Xóa Bài học"
  *     tags: [Lesson]
@@ -112,45 +169,8 @@ const router = Router();
  *       404:
  *         description: Không tìm thấy Bài học để xóa.
  */
-
 router.get('/:lessonId', lessonController.getLesson);
 router.put('/:lessonId', authMiddleware, checkAdmin, lessonController.updateLesson);
 router.delete('/:lessonId', authMiddleware, checkAdmin, lessonController.deleteLesson);
-
-/**
- * @swagger
- * /api/lessons:
- *   post:
- *     summary: "[ADMIN] Tạo mới một Bài học"
- *     tags: [Lesson]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/LessonInput'
- *     responses:
- *       201:
- *         description: Tạo mới thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Tạo Bài học thành công
- *                 data:
- *                   $ref: '#/components/schemas/Lesson'
- *       403:
- *         description: Không có quyền Admin
- */
-
-router.post('/', authMiddleware, checkAdmin, lessonController.createLesson);
 
 export default router;

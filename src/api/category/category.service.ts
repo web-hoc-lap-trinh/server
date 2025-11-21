@@ -12,6 +12,18 @@ export const getAllCategories = async () => {
   });
 };
 
+export const getCategoryById = async (categoryId: number) => {
+    const category = await categoryRepository.findOne({
+        where: { category_id: categoryId, is_active: true },
+        select: ['category_id', 'name', 'icon_url', 'order_index', 'created_at'] as (keyof Category)[],
+    });
+
+    if (!category) {
+        throw new NotFoundError('Không tìm thấy Chủ đề.');
+    }
+    return category;
+};
+
 export const createCategory = async (name: string, order_index: number = 0, icon_url?: string) => {
     const existingCategory = await categoryRepository.findOneBy({ name });
     if (existingCategory) {

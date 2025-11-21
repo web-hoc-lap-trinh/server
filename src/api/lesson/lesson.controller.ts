@@ -3,6 +3,11 @@ import * as lessonService from './lesson.service';
 import { successResponse, createdResponse, BadRequestError } from '../../utils/apiResponse';
 import { asyncHandler } from '../../middlewares/errorHandler.middleware';
 
+export const getLessons = asyncHandler(async (req: Request, res: Response) => {
+    const lessons = await lessonService.getAllLessons();
+    successResponse(res, 'Lessons fetched successfully', lessons);
+});
+
 export const getLesson = asyncHandler(async (req: Request, res: Response) => {
     const lessonId = parseInt(req.params.lessonId);
     if (isNaN(lessonId)) {
@@ -32,7 +37,6 @@ export const updateLesson = asyncHandler(async (req: Request, res: Response) => 
     const lessonId = parseInt(req.params.lessonId);
     const updateData = req.body;
     
-    // Ngăn Admin thay đổi created_by
     delete updateData.created_by; 
 
     const updatedLesson = await lessonService.updateLesson(lessonId, updateData);

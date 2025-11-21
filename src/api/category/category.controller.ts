@@ -1,11 +1,20 @@
 import { Request, Response } from 'express';
 import * as categoryService from './category.service';
-import { successResponse, createdResponse } from '../../utils/apiResponse';
+import { successResponse, createdResponse, BadRequestError } from '../../utils/apiResponse';
 import { asyncHandler } from '../../middlewares/errorHandler.middleware';
 
 export const getCategories = asyncHandler(async (req: Request, res: Response) => {
     const categories = await categoryService.getAllCategories();
     successResponse(res, 'Categories fetched successfully', categories);
+});
+
+export const getCategory = asyncHandler(async (req: Request, res: Response) => {
+    const categoryId = parseInt(req.params.categoryId);
+    if (isNaN(categoryId)) {
+        throw new BadRequestError('Invalid Category ID');
+    }
+    const category = await categoryService.getCategoryById(categoryId);
+    successResponse(res, 'Category fetched successfully', category);
 });
 
 export const createCategory = asyncHandler(async (req: Request, res: Response) => {

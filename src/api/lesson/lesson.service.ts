@@ -4,6 +4,24 @@ import { NotFoundError, ConflictError } from '../../utils/apiResponse';
 
 const lessonRepository = AppDataSource.getRepository(Lesson);
 
+export const getAllLessons = async () => {
+    return await lessonRepository.find({
+        where: { is_published: true },
+        relations: ['category'],
+        order: { order_index: 'ASC', updated_at: 'DESC' },
+        select: [
+            'lesson_id',
+            'title',
+            'description',
+            'difficulty_level',
+            'order_index',
+            'view_count',
+            'updated_at',
+            'category_id'
+        ] as (keyof Lesson)[],
+    });
+};
+
 export const getLessonById = async (lessonId: number) => {
   const lesson = await lessonRepository.findOne({
     where: { lesson_id: lessonId, is_published: true },
