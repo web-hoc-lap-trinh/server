@@ -18,7 +18,7 @@ const router = Router();
  *           type: string
  *         role:
  *           type: string
- *           enum: [student, admin]
+ *           enum: [STUDENT, ADMIN]
  *
  *     RegisterInput:
  *       type: object
@@ -66,11 +66,91 @@ const router = Router();
  *         message:
  *           type: string
  *
- *   tags:
- *     - name: Auth
- *       description: API xác thực người dùng
- *     - name: Profile
- *       description: API quản lý thông tin cá nhân
+ *     CategoryInput:
+ *       type: object
+ *       required:
+ *         - name
+ *       properties:
+ *         name:
+ *           type: string
+ *           description: Tên chủ đề
+ *         order_index:
+ *           type: integer
+ *           description: Thứ tự hiển thị
+ *         icon_url:
+ *           type: string
+ *           description: URL icon (optional)
+ *
+ *     Category:
+ *       type: object
+ *       properties:
+ *         category_id:
+ *           type: integer
+ *         name:
+ *           type: string
+ *         order_index:
+ *           type: integer
+ *         icon_url:
+ *           type: string
+ *         is_active:
+ *           type: boolean
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *
+ *     LessonInput:
+ *       type: object
+ *       required:
+ *         - category_id
+ *         - title
+ *         - content
+ *       properties:
+ *         category_id:
+ *           type: integer
+ *           description: ID của Chủ đề liên quan
+ *         title:
+ *           type: string
+ *           description: Tiêu đề Bài học
+ *         content:
+ *           type: string
+ *           description: Nội dung Bài học (dạng HTML, bao gồm cả bài tập điền vào chỗ trống)
+ *         description:
+ *           type: string
+ *           description: Mô tả ngắn gọn
+ *         difficulty_level:
+ *           type: string
+ *           enum: [BEGINNER, INTERMEDIATE, ADVANCED]
+ *         order_index:
+ *           type: integer
+ *
+ *     Lesson:
+ *       type: object
+ *       properties:
+ *         lesson_id:
+ *           type: integer
+ *         title:
+ *           type: string
+ *         content:
+ *           type: string
+ *         difficulty_level:
+ *           type: string
+ *         view_count:
+ *           type: integer
+ *         updated_at:
+ *           type: string
+ *           format: date-time
+ *         category:
+ *           $ref: '#/components/schemas/Category'
+ *
+ * tags:
+ *   - name: Auth
+ *     description: API xác thực người dùng
+ *   - name: Profile
+ *     description: API quản lý thông tin cá nhân
+ *   - name: Category
+ *     description: API Quản lý Chủ đề Học tập (Admin) & Xem (Public)
+ *   - name: Lesson
+ *     description: API Quản lý Bài học (Admin) & Xem (Public)
  */
 
 /**

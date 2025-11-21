@@ -3,6 +3,8 @@ import cors from 'cors';
 import { setupSwagger } from './config/swagger';
 import authRoutes from './api/auth/auth.route';
 import profileRoutes from './api/profile/profile.route';
+import categoryRoutes from './api/category/category.route';
+import lessonRoutes from './api/lesson/lesson.route';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware';
 
 const app: Express = express();
@@ -26,6 +28,8 @@ setupSwagger(app);
 app.use('/api/auth', authRoutes);
 // Expose profile endpoints under /api/profile
 app.use('/api/profile', profileRoutes);
+app.use('/api/categories', categoryRoutes); 
+app.use('/api/lessons', lessonRoutes);  
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Chào mừng đến với Codery API! Truy cập /api-docs để xem tài liệu.');
