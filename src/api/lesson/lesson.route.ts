@@ -30,7 +30,7 @@ const router = Router();
  *       404:
  *         description: Bài học không tồn tại hoặc chưa xuất bản
  *   put:
- *     summary: [ADMIN] Cập nhật Bài học
+ *     summary: "[ADMIN] Cập nhật Bài học"
  *     tags: [Lesson]
  *     security:
  *       - bearerAuth: []
@@ -53,7 +53,7 @@ const router = Router();
  *       403:
  *         description: Không có quyền Admin
  *   delete:
- *     summary: [ADMIN] Xóa Bài học
+ *     summary: "[ADMIN] Xóa Bài học"
  *     tags: [Lesson]
  *     security:
  *       - bearerAuth: []
@@ -76,7 +76,7 @@ router.delete('/:lessonId', authMiddleware, checkAdmin, lessonController.deleteL
  * @swagger
  * /api/lessons:
  *   post:
- *     summary: [ADMIN] Tạo mới một Bài học
+ *     summary: "[ADMIN] Tạo mới một Bài học"
  *     tags: [Lesson]
  *     security:
  *       - bearerAuth: []

@@ -23,7 +23,7 @@ const router = Router();
  *                   items:
  *                     $ref: '#/components/schemas/Category'
  *   post:
- *     summary: [ADMIN] Tạo mới một Chủ đề
+ *     summary: "[ADMIN] Tạo mới một Chủ đề"
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -53,7 +53,7 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  * @swagger
  * /api/categories/{categoryId}:
  *   put:
- *     summary: [ADMIN] Cập nhật thông tin Chủ đề
+ *     summary: "[ADMIN] Cập nhật thông tin Chủ đề"
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -76,7 +76,7 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *       404:
  *         description: Không tìm thấy Chủ đề
  *   delete:
- *     summary: [ADMIN] Xóa (Deactivate) Chủ đề
+ *     summary: "[ADMIN] Xóa (Deactivate) Chủ đề"
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
