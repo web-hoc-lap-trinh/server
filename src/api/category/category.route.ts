@@ -8,8 +8,8 @@ const router = Router();
  * @swagger
  * /api/categories:
  *   get:
- *     summary: Lấy danh sách tất cả các Chủ đề đang hoạt động
- *     tags: [Category] 
+ *     summary: "Lấy danh sách tất cả các Chủ đề đang hoạt động"
+ *     tags: [Category]
  *     responses:
  *       200:
  *         description: Danh sách chủ đề
@@ -18,6 +18,12 @@ const router = Router();
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Categories fetched successfully
  *                 data:
  *                   type: array
  *                   items:
@@ -41,6 +47,12 @@ const router = Router();
  *             schema:
  *               type: object
  *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Tạo Chủ đề thành công
  *                 data:
  *                   $ref: '#/components/schemas/Category'
  *       403:
@@ -73,6 +85,19 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *     responses:
  *       200:
  *         description: Cập nhật thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Cập nhật Chủ đề thành công
+ *                 data:
+ *                   $ref: '#/components/schemas/Category'
  *       404:
  *         description: Không tìm thấy Chủ đề
  *   delete:
@@ -90,6 +115,17 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *     responses:
  *       200:
  *         description: Xóa thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Xóa (Deactivate) Chủ đề thành công.
  *       404:
  *         description: Không tìm thấy Chủ đề
  */

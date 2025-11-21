@@ -33,7 +33,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
 };
 
 export const checkAdmin = (req: Request, res: Response, next: NextFunction) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && req.user.role === 'ADMIN') {
     next();
   } else {
     res
