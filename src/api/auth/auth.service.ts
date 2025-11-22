@@ -41,7 +41,7 @@ export const registerUser = async ({
     email,
     password_hash: hashedPassword,
     full_name,
-    role: 'student',
+    role: 'STUDENT',
     is_verified: false,
     verification_otp: otp,
     verification_otp_expires: expires,
