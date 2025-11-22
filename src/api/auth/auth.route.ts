@@ -46,6 +46,7 @@ const router = Router();
  *         email:
  *           type: string
  *           format: email
+ *           example: admin@gmail.com
  *         password:
  *           type: string
  *           format: password

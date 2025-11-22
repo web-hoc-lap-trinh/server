@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import { errorResponse } from '../utils/apiResponse';
 
 dotenv.config();
 
@@ -15,9 +16,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res
-      .status(401)
-      .json({ message: 'Không có token, yêu cầu bị từ chối' });
+    return errorResponse(res, 'Không có token, yêu cầu bị từ chối', 401);
   }
 
   const token = authHeader.split(' ')[1];
@@ -28,7 +27,7 @@ export const authMiddleware = (req: Request, res: Response, next: NextFunction) 
     req.user = decoded; 
     next();
   } catch (err) {
-    res.status(401).json({ message: 'Token không hợp lệ' });
+    return errorResponse(res, 'Token không hợp lệ', 401);
   }
 };
 
@@ -36,8 +35,6 @@ export const checkAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (req.user && req.user.role === 'ADMIN') {
     next();
   } else {
-    res
-      .status(403) 
-      .json({ message: 'Bạn không có quyền truy cập chức năng này' });
+    return errorResponse(res, 'Bạn không có quyền truy cập chức năng này', 403);
   }
 };
