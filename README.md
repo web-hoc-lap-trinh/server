@@ -41,6 +41,9 @@ EMAIL_USER=hoanghaiyencbm@gmail.com
 EMAIL_PASS=pasg luny ewru rmwq
 JWT_SECRET=your_jwt_secret_key
 NODE_ENV=development
+CLOUDINARY_CLOUD_NAME=dvfukrnu5
+CLOUDINARY_API_KEY=924876963489893
+CLOUDINARY_API_SECRET=w_Oeq8u24WZ7fc5fAeXH3US6of0
 ```
 
 ### 3. Chạy project

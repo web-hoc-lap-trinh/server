@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as categoryController from './category.controller';
 import { authMiddleware, checkAdmin } from '../../middlewares/auth.middleware';
+import { uploadSingleImage } from '../../middlewares/fileUpload.middleware';
 
 const router = Router();
 
@@ -28,6 +29,7 @@ const router = Router();
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Category'
+ *
  *   post:
  *     summary: "[ADMIN] Tạo mới một Chủ đề"
  *     tags: [Category]
@@ -36,9 +38,20 @@ const router = Router();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/CategoryInput'
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: Tên chủ đề
+ *               order_index:
+ *                 type: integer
+ *                 description: Thứ tự hiển thị
+ *               icon_file:
+ *                 type: string
+ *                 format: binary
+ *                 description: File icon (image/jpeg, image/png)
  *     responses:
  *       201:
  *         description: Tạo mới thành công
@@ -49,17 +62,21 @@ const router = Router();
  *               properties:
  *                 success:
  *                   type: boolean
- *                   example: true
  *                 message:
  *                   type: string
- *                   example: Tạo Chủ đề thành công
  *                 data:
  *                   $ref: '#/components/schemas/Category'
  *       403:
  *         description: Không có quyền Admin
  */
 router.get('/', categoryController.getCategories);
-router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
+router.post(
+  '/',
+  authMiddleware,
+  checkAdmin,
+  uploadSingleImage('icon_file'),
+  categoryController.createCategory
+);
 
 /**
  * @swagger
@@ -70,9 +87,9 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *     parameters:
  *       - in: path
  *         name: categoryId
+ *         required: true
  *         schema:
  *           type: integer
- *         required: true
  *         description: ID của Chủ đề
  *     responses:
  *       200:
@@ -92,6 +109,7 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *                   $ref: '#/components/schemas/Category'
  *       404:
  *         description: Không tìm thấy Chủ đề
+ *
  *   put:
  *     summary: "[ADMIN] Cập nhật thông tin Chủ đề"
  *     tags: [Category]
@@ -100,16 +118,26 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *     parameters:
  *       - in: path
  *         name: categoryId
+ *         required: true
  *         schema:
  *           type: integer
- *         required: true
  *         description: ID của Chủ đề
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/CategoryInput'
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               order_index:
+ *                 type: integer
+ *               icon_file:
+ *                 type: string
+ *                 format: binary
+ *               is_active:
+ *                 type: boolean
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -128,6 +156,7 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *                   $ref: '#/components/schemas/Category'
  *       404:
  *         description: Không tìm thấy Chủ đề
+ *
  *   delete:
  *     summary: "[ADMIN] Xóa (Deactivate) Chủ đề"
  *     tags: [Category]
@@ -136,9 +165,9 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *     parameters:
  *       - in: path
  *         name: categoryId
+ *         required: true
  *         schema:
  *           type: integer
- *         required: true
  *         description: ID của Chủ đề
  *     responses:
  *       200:
@@ -150,7 +179,6 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *               properties:
  *                 success:
  *                   type: boolean
- *                   example: true
  *                 message:
  *                   type: string
  *                   example: Xóa (Deactivate) Chủ đề thành công.
@@ -158,7 +186,18 @@ router.post('/', authMiddleware, checkAdmin, categoryController.createCategory);
  *         description: Không tìm thấy Chủ đề
  */
 router.get('/:categoryId', categoryController.getCategory);
-router.put('/:categoryId', authMiddleware, checkAdmin, categoryController.updateCategory);
-router.delete('/:categoryId', authMiddleware, checkAdmin, categoryController.deleteCategory);
+router.put(
+  '/:categoryId',
+  authMiddleware,
+  checkAdmin,
+  uploadSingleImage('icon_file'),
+  categoryController.updateCategory
+);
+router.delete(
+  '/:categoryId',
+  authMiddleware,
+  checkAdmin,
+  categoryController.deleteCategory
+);
 
 export default router;

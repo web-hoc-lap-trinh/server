@@ -18,8 +18,10 @@ export const getCategory = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const createCategory = asyncHandler(async (req: Request, res: Response) => {
-    const { name, order_index, icon_url } = req.body;
-    const newCategory = await categoryService.createCategory(name, order_index, icon_url);
+    const { name, order_index } = req.body;
+    const fileDataUri = req.body.fileDataUri as string | undefined;
+
+    const newCategory = await categoryService.createCategory(name, order_index, fileDataUri);
     createdResponse(res, 'Tạo Chủ đề thành công', newCategory);
 });
 
@@ -27,7 +29,11 @@ export const updateCategory = asyncHandler(async (req: Request, res: Response) =
     const categoryId = parseInt(req.params.categoryId);
     const updateData = req.body;
     
-    const updatedCategory = await categoryService.updateCategory(categoryId, updateData);
+    const fileDataUri = req.body.fileDataUri as string | undefined;
+
+    delete updateData.fileDataUri;
+    
+    const updatedCategory = await categoryService.updateCategory(categoryId, updateData, fileDataUri);
     successResponse(res, 'Cập nhật Chủ đề thành công', updatedCategory);
 });
 

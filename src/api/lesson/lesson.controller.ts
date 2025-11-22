@@ -3,6 +3,16 @@ import * as lessonService from './lesson.service';
 import { successResponse, createdResponse, BadRequestError } from '../../utils/apiResponse';
 import { asyncHandler } from '../../middlewares/errorHandler.middleware';
 
+export const getLessonsByCategory = asyncHandler(async (req: Request, res: Response) => {
+    const categoryId = parseInt(req.params.categoryId); // Lấy categoryId từ path
+    if (isNaN(categoryId)) {
+        throw new BadRequestError('Invalid Category ID');
+    }
+    
+    const lessons = await lessonService.getLessonsByCategoryId(categoryId);
+    successResponse(res, `Lessons fetched for category ${categoryId}`, lessons);
+});
+
 export const getLessons = asyncHandler(async (req: Request, res: Response) => {
     const lessons = await lessonService.getAllLessons();
     successResponse(res, 'Lessons fetched successfully', lessons);
@@ -16,6 +26,16 @@ export const getLesson = asyncHandler(async (req: Request, res: Response) => {
 
     const lesson = await lessonService.getLessonById(lessonId);
     successResponse(res, 'Lesson fetched successfully', lesson);
+});
+
+export const getPublishedLessons = asyncHandler(async (req: Request, res: Response) => {
+    const lessons = await lessonService.getPublishedLessons();
+    successResponse(res, 'Lessons fetched successfully', lessons);
+});
+
+export const getAllLessonsAdmin = asyncHandler(async (req: Request, res: Response) => {
+    const lessons = await lessonService.getAllLessonsAdmin();
+    successResponse(res, 'All lessons fetched successfully for Admin', lessons);
 });
 
 export const createLesson = asyncHandler(async (req: Request, res: Response) => {
