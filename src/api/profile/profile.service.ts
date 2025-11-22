@@ -7,6 +7,7 @@ import {
   UnauthorizedError,
   NotFoundError,
 } from '../../utils/apiResponse';
+import uploadToCloudinary from '../../config/cloudinary';
 
 const userRepository = AppDataSource.getRepository(User);
 
@@ -15,65 +16,81 @@ const generateOtp = () => {
 };
 
 export const getProfile = async (userId: number) => {
-  const user = await userRepository.findOne({ where: { user_id: userId } });
-  if (!user) {
-    throw new NotFoundError('Không tìm thấy người dùng');
-  }
-  const {
-    password_hash,
-    reset_otp,
-    reset_otp_expires,
-    verification_otp,
-    verification_otp_expires,
-    change_password_otp,
-    change_password_otp_expires,
-    ...result
-  } = user as any;
-  return result;
+    const user = await userRepository.findOne({
+        where: { user_id: userId },
+        select: [
+            'user_id',
+            'email',
+            'full_name',
+            'avatar_url',
+            'role',
+            'total_score',
+            'solved_problems',
+            'current_streak',
+            'max_streak',
+            'last_active',
+            'is_verified',
+            'created_at',
+            'updated_at',
+        ],
+    });
+
+    if (!user) {
+        throw new NotFoundError('Không tìm thấy người dùng.');
+    }
+    return user;
 };
 
-export const updateProfile = async (userId: number, body: { full_name?: string; avatar_url?: string }) => {
-  const updateData: { full_name?: string; avatar_url?: string } = {};
-  if (body.full_name) updateData.full_name = body.full_name;
-  if (body.avatar_url) updateData.avatar_url = body.avatar_url;
-
-  if (Object.keys(updateData).length === 0) {
-    throw new BadRequestError('Không có thông tin hợp lệ để cập nhật.');
-  }
-
-  await userRepository.update({ user_id: userId }, updateData);
-
-  return getProfile(userId);
-};
-
-export const changePassword = async (
-  userId: number,
-  oldPassword: string,
-  newPassword: string
+export const updateProfile = async (
+    userId: number, 
+    body: { full_name?: string; }, 
+    avatarFile?: any, 
 ) => {
-  const user = await userRepository
-    .createQueryBuilder('user')
-    .where('user.user_id = :userId', { userId })
-    .addSelect('user.password_hash')
-    .getOne();
+    const updateData: { full_name?: string; avatar_url?: string } = {};
 
-  if (!user) {
-    throw new NotFoundError('Không tìm thấy người dùng');
-  }
+    if (body.full_name) updateData.full_name = body.full_name;
 
-  const isMatch = await bcryptjs.compare(oldPassword, user.password_hash);
-  if (!isMatch) {
-    throw new UnauthorizedError('Mật khẩu cũ không đúng');
-  }
+    if (avatarFile) {
+        try {
+            const cloudinaryResponse = await uploadToCloudinary.uploader.upload(avatarFile.path, { folder: 'avatars' });
+            updateData.avatar_url = cloudinaryResponse.secure_url; 
 
-  const hashedPassword = await bcryptjs.hash(newPassword, 10);
+        } catch (error) {
+            console.error("Cloudinary upload failed:", error);
+            throw new BadRequestError('Upload ảnh đại diện thất bại.');
+        }
+    }
 
-  await userRepository.update(
-    { user_id: userId },
-    { password_hash: hashedPassword }
-  );
+    if (Object.keys(updateData).length === 0) {
+        return getProfile(userId);
+    }
+  
+    const result = await userRepository.update({ user_id: userId }, updateData);
+    
+    if (result.affected === 0) {
+        throw new NotFoundError('Không tìm thấy người dùng để cập nhật.');
+    }
+    return getProfile(userId);
+};
 
-  return { message: 'Thay đổi mật khẩu thành công.' };
+export const changePassword = async (userId: number, currentPassword: string, newPassword: string) => {
+    const user = await userRepository
+        .createQueryBuilder('user')
+        .where('user.user_id = :userId', { userId })
+        .addSelect('user.password_hash')
+        .getOne();
+
+    if (!user || !(await bcryptjs.compare(currentPassword, user.password_hash))) {
+        throw new UnauthorizedError('Mật khẩu hiện tại không đúng.');
+    }
+
+    const hashedPassword = await bcryptjs.hash(newPassword, 10);
+    await userRepository.update(
+        { user_id: userId }, 
+        { password_hash: hashedPassword }
+    );
+    
+    return getProfile(userId); 
 };
 
 export const requestChangePasswordOtp = async (userId: number) => {
@@ -138,6 +155,7 @@ export const verifyChangePassword = async (
       change_password_otp_expires: null,
     }
   );
-
-  return { message: 'Thay đổi mật khẩu thành công.' };
+  return getProfile(userId);
 };
+
+
