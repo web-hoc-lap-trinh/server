@@ -1,8 +1,24 @@
 import { Router } from 'express';
 import * as lessonController from './lesson.controller';
+import * as lessonImageController from './lesson-image.controller';
 import { authMiddleware, checkAdmin } from '../../middlewares/auth.middleware';
+import multer from 'multer';
 
 const router = Router();
+
+// Multer config for media upload (image & video)
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB for videos
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Chỉ chấp nhận file ảnh hoặc video'));
+    }
+  },
+});
 
 /**
  * @swagger
@@ -44,6 +60,65 @@ const router = Router();
  *           type: string
  *           example: Xóa Bài học thành công.
  */
+
+/**
+ * @swagger
+ * /api/lessons/upload-media:
+ *   post:
+ *     summary: "[ADMIN] Upload ảnh/video cho HTML editor trong lesson content"
+ *     description: API này dùng khi paste/upload media vào WYSIWYG editor. Trả về URL đã upload lên Cloudinary.
+ *     tags: [Lesson]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               media:
+ *                 type: string
+ *                 format: binary
+ *                 description: File ảnh (jpg, png, gif, webp...) hoặc video (mp4, webm, mov...) - Max 100MB
+ *     responses:
+ *       200:
+ *         description: Upload thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Upload video thành công
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     url:
+ *                       type: string
+ *                       example: https://res.cloudinary.com/demo/video/upload/v1234567890/codery/lesson-videos/abc123.mp4
+ *                     public_id:
+ *                       type: string
+ *                       example: codery/lesson-videos/abc123
+ *                     resource_type:
+ *                       type: string
+ *                       example: video
+ *                     duration:
+ *                       type: number
+ *                       example: 120.5
+ *                     thumbnail:
+ *                       type: string
+ *                       example: https://res.cloudinary.com/demo/video/upload/v1234567890/codery/lesson-videos/abc123.jpg
+ *       400:
+ *         description: File không hợp lệ hoặc quá lớn
+ *       403:
+ *         description: Không có quyền Admin
+ */
+router.post('/upload-media', authMiddleware, checkAdmin, upload.single('media'), lessonImageController.uploadLessonMedia);
 
 /**
  * @swagger
