@@ -58,13 +58,13 @@ export class UpdateEnumToUppercase1700000000002 implements MigrationInterface {
     await queryRunner.query(`
       UPDATE submissions 
       SET status = UPPER(status)
-      WHERE status IN ('pending', 'accepted', 'wrong_answer', 'time_limit', 'memory_limit', 'runtime_error', 'compile_error')
+      WHERE status IN ('pending', 'running', 'accepted', 'wrong_answer', 'time_limit', 'memory_limit', 'runtime_error', 'compile_error', 'internal_error')
     `);
 
-    // 10. Modify submissions.status enum to UPPERCASE
+    // 10. Modify submissions.status enum to UPPERCASE (including RUNNING and INTERNAL_ERROR)
     await queryRunner.query(`
       ALTER TABLE submissions 
-      MODIFY COLUMN status ENUM('PENDING', 'ACCEPTED', 'WRONG_ANSWER', 'TIME_LIMIT', 'MEMORY_LIMIT', 'RUNTIME_ERROR', 'COMPILE_ERROR') DEFAULT NULL
+      MODIFY COLUMN status ENUM('PENDING', 'RUNNING', 'ACCEPTED', 'WRONG_ANSWER', 'TIME_LIMIT', 'MEMORY_LIMIT', 'RUNTIME_ERROR', 'COMPILE_ERROR', 'INTERNAL_ERROR') DEFAULT 'PENDING'
     `);
 
     // 11. Update existing data in discussions table to UPPERCASE
@@ -157,12 +157,12 @@ export class UpdateEnumToUppercase1700000000002 implements MigrationInterface {
     // 5. Revert submissions.status
     await queryRunner.query(`
       ALTER TABLE submissions 
-      MODIFY COLUMN status ENUM('pending', 'accepted', 'wrong_answer', 'time_limit', 'memory_limit', 'runtime_error', 'compile_error') DEFAULT NULL
+      MODIFY COLUMN status ENUM('pending', 'running', 'accepted', 'wrong_answer', 'time_limit', 'memory_limit', 'runtime_error', 'compile_error', 'internal_error') DEFAULT NULL
     `);
     await queryRunner.query(`
       UPDATE submissions 
       SET status = LOWER(status)
-      WHERE status IN ('PENDING', 'ACCEPTED', 'WRONG_ANSWER', 'TIME_LIMIT', 'MEMORY_LIMIT', 'RUNTIME_ERROR', 'COMPILE_ERROR')
+      WHERE status IN ('PENDING', 'RUNNING', 'ACCEPTED', 'WRONG_ANSWER', 'TIME_LIMIT', 'MEMORY_LIMIT', 'RUNTIME_ERROR', 'COMPILE_ERROR', 'INTERNAL_ERROR')
     `);
 
     // 6. Revert discussions.discussion_type

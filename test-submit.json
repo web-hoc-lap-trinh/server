@@ -1,0 +1,4 @@
+{
+  "language": "python",
+  "source_code": "a = int(input())\nb = int(input())\nprint(a + b)\n"
+}

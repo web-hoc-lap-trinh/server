@@ -5,8 +5,12 @@ dotenv.config();
 import app from './app';
 import { AppDataSource } from './config/data-source';
 import mysql from 'mysql2/promise';
+import { initializeQueue, startWorker } from './api/submission/services/queue.service';
+import { checkDockerAvailable } from './api/submission/services/docker-runner.service';
 
 const PORT = process.env.PORT || 3000;
+const ENABLE_WORKER = process.env.ENABLE_WORKER !== 'false'; // Enable by default
+const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '2');
 
 const createDatabaseIfNotExists = async () => {
   try {
@@ -26,6 +30,43 @@ const createDatabaseIfNotExists = async () => {
   } catch (error) {
     console.error('❌ Error creating database:', error);
     throw error;
+  }
+};
+
+const initializeJudgeSystem = async () => {
+  try {
+    // Check Docker availability
+    const dockerAvailable = await checkDockerAvailable();
+    if (!dockerAvailable) {
+      console.warn('⚠️  Docker not available - code execution will not work');
+      return;
+    }
+    console.log('🐳 Docker is available');
+
+    // Initialize queue (Redis required for BullMQ)
+    try {
+      await initializeQueue();
+      console.log('📋 Judge queue initialized');
+
+      // Start worker if enabled
+      if (ENABLE_WORKER) {
+        await startWorker(WORKER_CONCURRENCY);
+        console.log(`👷 Judge worker started (concurrency: ${WORKER_CONCURRENCY})`);
+      }
+    } catch (error: any) {
+      if (error.code === 'ECONNREFUSED' || 
+          error.message?.includes('Redis') || 
+          error.message?.includes('NOAUTH') ||
+          error.message?.includes('Authentication')) {
+        console.warn('⚠️  Redis not available or requires authentication - submissions will be judged synchronously');
+        console.warn('   Set REDIS_PASSWORD in .env if your Redis requires authentication');
+      } else {
+        console.error('❌ Queue initialization error:', error.message);
+      }
+    }
+  } catch (error: any) {
+    console.error('❌ Error initializing judge system:', error.message);
+    // Don't exit - server can still run without judge system
   }
 };
 
@@ -49,8 +90,12 @@ const startServer = async () => {
       console.log('✅ Database is up to date');
     }
 
+    // Initialize judge system
+    await initializeJudgeSystem();
+
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+      console.log(`📚 API Docs: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     console.error('❌ Database connection error:', error);
