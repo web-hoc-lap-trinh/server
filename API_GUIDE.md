@@ -381,3 +381,172 @@ Nếu lỗi phát sinh từ thư viện bên ngoài (ví dụ `RateLimit` lib) v
 - [ ] Update this guide / changelog if new error class was added
 
 ---
+
+## 📝 Exercise API (Bài tập trắc nghiệm)
+
+Hệ thống bài tập nhỏ sau mỗi lesson, tương tự W3School.
+
+### Luồng hoạt động
+
+1. Sau khi học xong một lesson, user có thể làm bài tập
+2. Mỗi lesson có thể có 0, 1 hoặc nhiều câu hỏi trắc nghiệm
+3. Hỗ trợ 2 loại: Multiple Choice (4 lựa chọn) và True/False (2 lựa chọn)
+4. Khi trả lời, hệ thống trả về kết quả + giải thích + điều hướng câu tiếp theo
+
+### API Endpoints
+
+#### 1. Lấy danh sách bài tập của lesson
+
+```http
+GET /api/exercises/lesson/:lessonId
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Lấy danh sách bài tập thành công",
+  "result": {
+    "lesson_id": 1,
+    "total_questions": 5,
+    "exercises": [
+      {
+        "exercise_id": 1,
+        "question_preview": "Phương thức nào được sử dụng để lấy...",
+        "exercise_type": "MULTIPLE_CHOICE",
+        "order": 1
+      }
+    ]
+  }
+}
+```
+
+#### 2. Bắt đầu làm bài tập (lấy câu đầu tiên)
+
+```http
+GET /api/exercises/lesson/:lessonId/start
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Lấy bài tập đầu tiên thành công",
+  "result": {
+    "has_exercises": true,
+    "exercise": {
+      "exercise_id": 1,
+      "lesson_id": 1,
+      "question": "Phương thức nào được sử dụng để lấy một phần tử HTML theo ID?",
+      "exercise_type": "MULTIPLE_CHOICE",
+      "options": [
+        { "id": "A", "text": "document.getElementById()" },
+        { "id": "B", "text": "document.getElementByClass()" },
+        { "id": "C", "text": "document.querySelector()" },
+        { "id": "D", "text": "document.findById()" }
+      ],
+      "order_index": 0
+    },
+    "navigation": {
+      "current_index": 1,
+      "total_questions": 5,
+      "remaining_questions": 4,
+      "is_first": true,
+      "is_last": false,
+      "next_exercise_id": 2,
+      "prev_exercise_id": null
+    }
+  }
+}
+```
+
+#### 3. Lấy một câu hỏi cụ thể
+
+```http
+GET /api/exercises/:exerciseId
+```
+
+#### 4. Nộp câu trả lời
+
+```http
+POST /api/exercises/:exerciseId/submit
+Content-Type: application/json
+
+{
+  "answer": "A"
+}
+```
+
+**Response (đúng):**
+```json
+{
+  "code": 200,
+  "message": "Chính xác! 🎉",
+  "result": {
+    "is_correct": true,
+    "correct_answer": "A",
+    "explanation": "document.getElementById() là phương thức chuẩn để lấy phần tử theo ID",
+    "navigation": {
+      "current_index": 1,
+      "total_questions": 5,
+      "remaining_questions": 4,
+      "is_first": true,
+      "is_last": false,
+      "next_exercise_id": 2,
+      "prev_exercise_id": null
+    }
+  }
+}
+```
+
+**Response (sai):**
+```json
+{
+  "code": 200,
+  "message": "Sai rồi. Hãy thử lại!",
+  "result": {
+    "is_correct": false,
+    "correct_answer": "A",
+    "explanation": "...",
+    "navigation": { ... }
+  }
+}
+```
+
+### Admin API
+
+- `GET /api/exercises/admin/lesson/:lessonId` - Lấy tất cả bài tập (có đáp án)
+- `GET /api/exercises/admin/:exerciseId` - Lấy chi tiết bài tập
+- `POST /api/exercises` - Tạo bài tập mới
+- `PUT /api/exercises/:exerciseId` - Cập nhật bài tập
+- `DELETE /api/exercises/:exerciseId` - Xóa bài tập
+- `PUT /api/exercises/admin/lesson/:lessonId/reorder` - Sắp xếp lại thứ tự
+
+### Tạo bài tập mới (Admin)
+
+```http
+POST /api/exercises
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "lesson_id": 1,
+  "question": "Câu hỏi của bạn?",
+  "exercise_type": "MULTIPLE_CHOICE",
+  "options": [
+    { "id": "A", "text": "Đáp án A" },
+    { "id": "B", "text": "Đáp án B" },
+    { "id": "C", "text": "Đáp án C" },
+    { "id": "D", "text": "Đáp án D" }
+  ],
+  "correct_answer": "A",
+  "explanation": "Giải thích tại sao A đúng"
+}
+```
+
+### Exercise Type
+
+- `MULTIPLE_CHOICE`: 2-4 lựa chọn, answer là A/B/C/D
+- `TRUE_FALSE`: 2 lựa chọn, answer là TRUE/FALSE
+
+---

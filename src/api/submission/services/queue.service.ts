@@ -14,19 +14,27 @@ import { judgeSubmission, JudgeJobData, JudgeResult } from './judge.service';
 
 const QUEUE_NAME = 'judge-queue';
 
+// Track if we've already logged connection failure to avoid spam
+let connectionErrorLogged = false;
+
 // Redis connection configuration
 const getRedisConnection = () => {
   const config: any = {
     host: process.env.REDIS_HOST || 'localhost',
     port: parseInt(process.env.REDIS_PORT || '6379'),
     maxRetriesPerRequest: null,
+    enableOfflineQueue: false, // Don't queue commands when disconnected
     retryStrategy: (times: number) => {
       if (times > 3) {
-        console.warn('[Queue] Redis connection failed after 3 retries, giving up');
+        if (!connectionErrorLogged) {
+          console.warn('[Queue] Redis connection failed after 3 retries, giving up');
+          connectionErrorLogged = true;
+        }
         return null; // Stop retrying
       }
       return Math.min(times * 200, 1000);
     },
+    lazyConnect: true, // Don't connect immediately
   };
   
   // Only add password if it's set and not empty
@@ -74,6 +82,26 @@ let queueAvailable = false;
  * Initialize the judge queue
  */
 export async function initializeQueue(): Promise<void> {
+  // First test if Redis is available
+  const Redis = (await import('ioredis')).default;
+  const testConnection = new Redis({
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+    password: process.env.REDIS_PASSWORD || undefined,
+    maxRetriesPerRequest: 1,
+    retryStrategy: () => null, // Don't retry
+    lazyConnect: true,
+  });
+
+  try {
+    await testConnection.connect();
+    await testConnection.ping();
+    await testConnection.quit();
+  } catch (error: any) {
+    testConnection.disconnect();
+    throw new Error(`Redis not available: ${error.message}`);
+  }
+
   try {
     // Create queue
     judgeQueue = new Queue<JudgeJobData, JudgeResult>(QUEUE_NAME, getQueueOptions());
@@ -87,7 +115,6 @@ export async function initializeQueue(): Promise<void> {
     queueAvailable = true;
     // Queue initialized successfully
   } catch (error: any) {
-    console.error('[Queue] Failed to initialize queue:', error.message);
     queueAvailable = false;
     judgeQueue = null;
     throw error;

@@ -1,0 +1,533 @@
+import { Router } from 'express';
+import * as exerciseController from './exercise.controller';
+import { authMiddleware, checkAdmin } from '../../middlewares/auth.middleware';
+
+const router = Router();
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     ExerciseOption:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: Option ID (A, B, C, D for multiple choice; TRUE, FALSE for true/false)
+ *           example: "A"
+ *         text:
+ *           type: string
+ *           description: Option content
+ *           example: "document.getElementById()"
+ *
+ *     Exercise:
+ *       type: object
+ *       properties:
+ *         exercise_id:
+ *           type: integer
+ *           example: 1
+ *         lesson_id:
+ *           type: integer
+ *           example: 1
+ *         question:
+ *           type: string
+ *           example: "Phương thức nào được sử dụng để lấy một phần tử HTML theo ID?"
+ *         exercise_type:
+ *           type: string
+ *           enum: [MULTIPLE_CHOICE, TRUE_FALSE]
+ *           example: "MULTIPLE_CHOICE"
+ *         options:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/ExerciseOption'
+ *         correct_answer:
+ *           type: string
+ *           example: "A"
+ *         explanation:
+ *           type: string
+ *           nullable: true
+ *           example: "document.getElementById() là phương thức được sử dụng để lấy phần tử theo ID"
+ *         order_index:
+ *           type: integer
+ *           example: 0
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *
+ *     ExerciseNavigation:
+ *       type: object
+ *       properties:
+ *         current_index:
+ *           type: integer
+ *           description: Vị trí câu hỏi hiện tại (1-based)
+ *           example: 2
+ *         total_questions:
+ *           type: integer
+ *           description: Tổng số câu hỏi
+ *           example: 5
+ *         remaining_questions:
+ *           type: integer
+ *           description: Số câu còn lại
+ *           example: 3
+ *         is_first:
+ *           type: boolean
+ *           description: Đây có phải câu đầu tiên?
+ *           example: false
+ *         is_last:
+ *           type: boolean
+ *           description: Đây có phải câu cuối cùng?
+ *           example: false
+ *         next_exercise_id:
+ *           type: integer
+ *           nullable: true
+ *           description: ID câu tiếp theo (null nếu là câu cuối)
+ *           example: 3
+ *         prev_exercise_id:
+ *           type: integer
+ *           nullable: true
+ *           description: ID câu trước đó (null nếu là câu đầu)
+ *           example: 1
+ *
+ *     ExerciseWithNavigation:
+ *       type: object
+ *       properties:
+ *         exercise:
+ *           type: object
+ *           properties:
+ *             exercise_id:
+ *               type: integer
+ *             lesson_id:
+ *               type: integer
+ *             question:
+ *               type: string
+ *             exercise_type:
+ *               type: string
+ *             options:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/ExerciseOption'
+ *             order_index:
+ *               type: integer
+ *         navigation:
+ *           $ref: '#/components/schemas/ExerciseNavigation'
+ *
+ *     AnswerResult:
+ *       type: object
+ *       properties:
+ *         is_correct:
+ *           type: boolean
+ *           example: true
+ *         correct_answer:
+ *           type: string
+ *           example: "A"
+ *         explanation:
+ *           type: string
+ *           nullable: true
+ *           example: "Giải thích về đáp án đúng"
+ *         navigation:
+ *           $ref: '#/components/schemas/ExerciseNavigation'
+ *
+ *     ExerciseSummary:
+ *       type: object
+ *       properties:
+ *         lesson_id:
+ *           type: integer
+ *           example: 1
+ *         total_questions:
+ *           type: integer
+ *           example: 5
+ *         exercises:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               exercise_id:
+ *                 type: integer
+ *               question_preview:
+ *                 type: string
+ *               exercise_type:
+ *                 type: string
+ *               order:
+ *                 type: integer
+ *
+ *     CreateExerciseRequest:
+ *       type: object
+ *       required:
+ *         - lesson_id
+ *         - question
+ *         - exercise_type
+ *         - options
+ *         - correct_answer
+ *       properties:
+ *         lesson_id:
+ *           type: integer
+ *           example: 1
+ *         question:
+ *           type: string
+ *           example: "Phương thức nào được sử dụng để lấy một phần tử HTML theo ID?"
+ *         exercise_type:
+ *           type: string
+ *           enum: [MULTIPLE_CHOICE, TRUE_FALSE]
+ *           example: "MULTIPLE_CHOICE"
+ *         options:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/ExerciseOption'
+ *           example:
+ *             - id: "A"
+ *               text: "document.getElementById()"
+ *             - id: "B"
+ *               text: "document.querySelector()"
+ *             - id: "C"
+ *               text: "document.getElement()"
+ *             - id: "D"
+ *               text: "document.findById()"
+ *         correct_answer:
+ *           type: string
+ *           example: "A"
+ *         explanation:
+ *           type: string
+ *           example: "document.getElementById() là phương thức chuẩn để lấy phần tử theo ID"
+ *         order_index:
+ *           type: integer
+ *           example: 0
+ */
+
+// ==================== PUBLIC ROUTES ====================
+
+/**
+ * @swagger
+ * /api/exercises/lesson/{lessonId}:
+ *   get:
+ *     summary: Lấy danh sách bài tập của một bài học (không có đáp án)
+ *     tags: [Exercise]
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "Lấy danh sách bài tập thành công"
+ *                 result:
+ *                   $ref: '#/components/schemas/ExerciseSummary'
+ */
+router.get('/lesson/:lessonId', exerciseController.getExercisesByLesson);
+
+/**
+ * @swagger
+ * /api/exercises/lesson/{lessonId}/start:
+ *   get:
+ *     summary: Bắt đầu làm bài tập - lấy câu hỏi đầu tiên
+ *     tags: [Exercise]
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "Lấy bài tập đầu tiên thành công"
+ *                 result:
+ *                   allOf:
+ *                     - type: object
+ *                       properties:
+ *                         has_exercises:
+ *                           type: boolean
+ *                           example: true
+ *                     - $ref: '#/components/schemas/ExerciseWithNavigation'
+ */
+router.get('/lesson/:lessonId/start', exerciseController.getFirstExerciseByLesson);
+
+/**
+ * @swagger
+ * /api/exercises/{exerciseId}:
+ *   get:
+ *     summary: Lấy chi tiết một bài tập (với thông tin điều hướng)
+ *     tags: [Exercise]
+ *     parameters:
+ *       - in: path
+ *         name: exerciseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài tập
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "Lấy bài tập thành công"
+ *                 result:
+ *                   $ref: '#/components/schemas/ExerciseWithNavigation'
+ *       404:
+ *         description: Không tìm thấy bài tập
+ */
+router.get('/:exerciseId', exerciseController.getExercise);
+
+/**
+ * @swagger
+ * /api/exercises/{exerciseId}/submit:
+ *   post:
+ *     summary: Nộp câu trả lời cho một bài tập
+ *     tags: [Exercise]
+ *     parameters:
+ *       - in: path
+ *         name: exerciseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài tập
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - answer
+ *             properties:
+ *               answer:
+ *                 type: string
+ *                 description: Câu trả lời (A/B/C/D hoặc TRUE/FALSE)
+ *                 example: "A"
+ *     responses:
+ *       200:
+ *         description: Kết quả kiểm tra
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "Chính xác! 🎉"
+ *                 result:
+ *                   $ref: '#/components/schemas/AnswerResult'
+ */
+router.post('/:exerciseId/submit', exerciseController.submitAnswer);
+
+// ==================== ADMIN ROUTES ====================
+
+/**
+ * @swagger
+ * /api/exercises/admin/lesson/{lessonId}:
+ *   get:
+ *     summary: "[ADMIN] Lấy tất cả bài tập của bài học (bao gồm đáp án)"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                 message:
+ *                   type: string
+ *                 result:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Exercise'
+ */
+router.get('/admin/lesson/:lessonId', authMiddleware, checkAdmin, exerciseController.getExercisesByLessonAdmin);
+
+/**
+ * @swagger
+ * /api/exercises/admin/{exerciseId}:
+ *   get:
+ *     summary: "[ADMIN] Lấy chi tiết bài tập (bao gồm đáp án)"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: exerciseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Thành công
+ */
+router.get('/admin/:exerciseId', authMiddleware, checkAdmin, exerciseController.getExerciseAdmin);
+
+/**
+ * @swagger
+ * /api/exercises:
+ *   post:
+ *     summary: "[ADMIN] Tạo bài tập mới"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/CreateExerciseRequest'
+ *     responses:
+ *       201:
+ *         description: Tạo thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 201
+ *                 message:
+ *                   type: string
+ *                   example: "Tạo bài tập thành công"
+ *                 result:
+ *                   $ref: '#/components/schemas/Exercise'
+ */
+router.post('/', authMiddleware, checkAdmin, exerciseController.createExercise);
+
+/**
+ * @swagger
+ * /api/exercises/{exerciseId}:
+ *   put:
+ *     summary: "[ADMIN] Cập nhật bài tập"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: exerciseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               question:
+ *                 type: string
+ *               exercise_type:
+ *                 type: string
+ *                 enum: [MULTIPLE_CHOICE, TRUE_FALSE]
+ *               options:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/ExerciseOption'
+ *               correct_answer:
+ *                 type: string
+ *               explanation:
+ *                 type: string
+ *               order_index:
+ *                 type: integer
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ */
+router.put('/:exerciseId', authMiddleware, checkAdmin, exerciseController.updateExercise);
+
+/**
+ * @swagger
+ * /api/exercises/{exerciseId}:
+ *   delete:
+ *     summary: "[ADMIN] Xóa bài tập"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: exerciseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
+router.delete('/:exerciseId', authMiddleware, checkAdmin, exerciseController.deleteExercise);
+
+/**
+ * @swagger
+ * /api/exercises/admin/lesson/{lessonId}/reorder:
+ *   put:
+ *     summary: "[ADMIN] Sắp xếp lại thứ tự bài tập"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               orders:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     exercise_id:
+ *                       type: integer
+ *                     order_index:
+ *                       type: integer
+ *     responses:
+ *       200:
+ *         description: Sắp xếp thành công
+ */
+router.put('/admin/lesson/:lessonId/reorder', authMiddleware, checkAdmin, exerciseController.reorderExercises);
+
+export default router;

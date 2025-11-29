@@ -84,10 +84,15 @@ router.get('/languages', problemController.getLanguages);
  *           enum: [EASY, MEDIUM, HARD]
  *         description: Lọc theo độ khó
  *       - in: query
- *         name: category_id
+ *         name: tag_id
  *         schema:
  *           type: integer
- *         description: Lọc theo ID danh mục
+ *         description: Lọc theo tag ID
+ *       - in: query
+ *         name: tag
+ *         schema:
+ *           type: string
+ *         description: Lọc theo tag slug (ví dụ "array", "dynamic-programming")
  *       - in: query
  *         name: search
  *         schema:

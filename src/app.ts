@@ -5,6 +5,7 @@ import authRoutes from './api/auth/auth.route';
 import profileRoutes from './api/profile/profile.route';
 import categoryRoutes from './api/category/category.route';
 import lessonRoutes from './api/lesson/lesson.route';
+import exerciseRoutes from './api/exercise/exercise.route';
 import problemRoutes from './api/problem/problem.route';
 import testcaseRoutes from './api/problem/testcase.route';
 import submissionRoutes from './api/submission/submission.route';
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/categories', categoryRoutes); 
 app.use('/api/lessons', lessonRoutes);
+app.use('/api/exercises', exerciseRoutes);
 
 // Online Judge routes
 app.use('/api/problems', problemRoutes);
