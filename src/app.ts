@@ -13,6 +13,7 @@ import tagRoutes from './api/tag/tag.route';
 import { submitCode, getProblemLeaderboard } from './api/submission/submission.controller';
 import { authMiddleware } from './middlewares/auth.middleware';
 import { addTagsToProblem, removeTagsFromProblem, setTagsForProblem, getTagsForProblem } from './api/tag/tag.controller';
+import { getAllConversations } from './api/problem/ai.controller';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware';
 
 const app: Express = express();
@@ -57,6 +58,9 @@ app.get('/api/problems/:id/tags', getTagsForProblem);
 app.post('/api/problems/:id/tags', authMiddleware, addTagsToProblem);
 app.put('/api/problems/:id/tags', authMiddleware, setTagsForProblem);
 app.delete('/api/problems/:id/tags', authMiddleware, removeTagsFromProblem);
+
+// AI Chat - get all conversations for current user
+app.get('/api/ai/conversations', authMiddleware, getAllConversations);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Chào mừng đến với Codery API! Truy cập /api-docs để xem tài liệu.');

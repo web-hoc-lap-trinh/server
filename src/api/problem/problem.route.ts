@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { authMiddleware, checkAdmin } from '../../middlewares/auth.middleware';
 import * as problemController from './problem.controller';
+import * as aiController from './ai.controller';
 
 const router = Router();
 
@@ -509,5 +510,256 @@ router.post('/:id/testcases', authMiddleware, checkAdmin, problemController.addT
  *         description: Không tìm thấy bài tập
  */
 router.post('/:id/testcases/bulk', authMiddleware, checkAdmin, problemController.addBulkTestCases);
+
+// ==========================================
+// AI CHAT ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     AiConversation:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         problem_id:
+ *           type: integer
+ *           example: 5
+ *         user_id:
+ *           type: integer
+ *           example: 1
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *     AiMessage:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         conversation_id:
+ *           type: integer
+ *           example: 1
+ *         role:
+ *           type: string
+ *           enum: [user, assistant]
+ *           example: user
+ *         message:
+ *           type: string
+ *           example: "Giải thích constraints cho mình"
+ *         created_at:
+ *           type: string
+ *           format: date-time
+ *     ChatRequest:
+ *       type: object
+ *       required:
+ *         - message
+ *       properties:
+ *         conversationId:
+ *           type: integer
+ *           nullable: true
+ *           description: ID cuộc trò chuyện (nếu đã có). Nếu không truyền, hệ thống sẽ tự tìm hoặc tạo mới.
+ *         message:
+ *           type: string
+ *           description: Tin nhắn gửi cho AI
+ *           example: "Giải thích constraints cho mình"
+ *     ChatResponse:
+ *       type: object
+ *       properties:
+ *         conversationId:
+ *           type: integer
+ *           example: 1
+ *         answer:
+ *           type: string
+ *           example: "Constraints của bài toán yêu cầu..."
+ *         provider:
+ *           type: string
+ *           enum: [gemini, openai, none]
+ *           example: gemini
+ *         messages:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/AiMessage'
+ */
+
+/**
+ * @swagger
+ * /api/problems/{problemId}/ai/chat:
+ *   post:
+ *     summary: Gửi tin nhắn đến AI và nhận phản hồi
+ *     description: |
+ *       Gửi một tin nhắn đến AI để hỏi về bài toán.
+ *       - AI sẽ nhận context của bài toán (title, description, constraints, examples)
+ *       - AI nhớ lịch sử trò chuyện (multi-turn)
+ *       - Nếu chưa có conversation, hệ thống sẽ tự tạo mới
+ *     tags: [AI Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: problemId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID bài tập
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ChatRequest'
+ *     responses:
+ *       200:
+ *         description: Phản hồi từ AI
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "AI response"
+ *                 result:
+ *                   $ref: '#/components/schemas/ChatResponse'
+ *       400:
+ *         description: Dữ liệu không hợp lệ
+ *       401:
+ *         description: Chưa đăng nhập
+ *       404:
+ *         description: Không tìm thấy bài tập
+ */
+router.post('/:problemId/ai/chat', authMiddleware, aiController.chat);
+
+/**
+ * @swagger
+ * /api/problems/{problemId}/ai/conversation:
+ *   get:
+ *     summary: Lấy hoặc tạo cuộc trò chuyện AI cho bài tập
+ *     description: |
+ *       Lấy cuộc trò chuyện hiện có hoặc tạo mới nếu chưa có.
+ *       Mỗi user chỉ có 1 conversation cho mỗi problem.
+ *     tags: [AI Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: problemId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID bài tập
+ *     responses:
+ *       200:
+ *         description: Thông tin cuộc trò chuyện
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                 message:
+ *                   type: string
+ *                 result:
+ *                   type: object
+ *                   properties:
+ *                     conversation:
+ *                       $ref: '#/components/schemas/AiConversation'
+ *                     messages:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AiMessage'
+ */
+router.get('/:problemId/ai/conversation', authMiddleware, aiController.getConversation);
+
+/**
+ * @swagger
+ * /api/problems/{problemId}/ai/messages:
+ *   get:
+ *     summary: Lấy tất cả tin nhắn của cuộc trò chuyện
+ *     description: Lấy lịch sử tin nhắn của cuộc trò chuyện AI cho bài tập
+ *     tags: [AI Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: problemId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID bài tập
+ *     responses:
+ *       200:
+ *         description: Danh sách tin nhắn
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                 message:
+ *                   type: string
+ *                 result:
+ *                   type: object
+ *                   properties:
+ *                     conversationId:
+ *                       type: integer
+ *                     messages:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AiMessage'
+ */
+router.get('/:problemId/ai/messages', authMiddleware, aiController.getMessages);
+
+/**
+ * @swagger
+ * /api/problems/{problemId}/ai/conversation:
+ *   delete:
+ *     summary: Xóa cuộc trò chuyện AI
+ *     description: Xóa toàn bộ cuộc trò chuyện và tất cả tin nhắn
+ *     tags: [AI Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: problemId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID bài tập
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ */
+router.delete('/:problemId/ai/conversation', authMiddleware, aiController.deleteConversation);
+
+/**
+ * @swagger
+ * /api/problems/{problemId}/ai/messages:
+ *   delete:
+ *     summary: Xóa tất cả tin nhắn (giữ lại conversation)
+ *     description: Xóa tất cả tin nhắn trong cuộc trò chuyện nhưng giữ lại conversation
+ *     tags: [AI Chat]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: problemId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID bài tập
+ *     responses:
+ *       200:
+ *         description: Xóa tin nhắn thành công
+ */
+router.delete('/:problemId/ai/messages', authMiddleware, aiController.clearMessages);
 
 export default router;

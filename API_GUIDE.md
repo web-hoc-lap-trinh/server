@@ -550,3 +550,41 @@ Content-Type: application/json
 - `TRUE_FALSE`: 2 lựa chọn, answer là TRUE/FALSE
 
 ---
+
+## 🤖 AI Multi-Turn Chat (per Problem)
+
+Endpoint:
+
+```http
+POST /api/problems/:problemId/ai/chat
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "conversationId": 123, // optional
+  "message": "Mình không hiểu phần constraints, giúp mình nhé"
+}
+```
+
+Response:
+
+```json
+{
+  "code": 200,
+  "message": "AI response",
+  "result": {
+    "conversationId": 123,
+    "answer": "... AI reply ...",
+    "messages": [
+      { "id": 1, "conversation_id": 123, "role": "user", "message": "...", "created_at": "..." },
+      { "id": 2, "conversation_id": 123, "role": "assistant", "message": "...", "created_at": "..." }
+    ]
+  }
+}
+```
+
+Notes:
+- Conversation is persisted per `(problem_id, user_id)`; reopening the problem resumes the same conversation.
+- System will include problem title/description/examples in the prompt and the last N messages for multi-turn context.
+- If `OPENAI_API_KEY` or `GEMINI_API_KEY` is not configured, the API returns a fallback canned answer.
+
