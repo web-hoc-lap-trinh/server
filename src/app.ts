@@ -10,6 +10,7 @@ import problemRoutes from './api/problem/problem.route';
 import testcaseRoutes from './api/problem/testcase.route';
 import submissionRoutes from './api/submission/submission.route';
 import tagRoutes from './api/tag/tag.route';
+import recommendationRoutes from './api/recommendation/recommendation.route';
 import { submitCode, getProblemLeaderboard } from './api/submission/submission.controller';
 import { authMiddleware } from './middlewares/auth.middleware';
 import { addTagsToProblem, removeTagsFromProblem, setTagsForProblem, getTagsForProblem } from './api/tag/tag.controller';
@@ -46,6 +47,7 @@ app.use('/api/problems', problemRoutes);
 app.use('/api/testcases', testcaseRoutes);
 app.use('/api/submissions', submissionRoutes);
 app.use('/api/tags', tagRoutes);
+app.use('/api/recommendations', recommendationRoutes);
 
 // Submit code endpoint (nested under problems)
 app.post('/api/problems/:id/submit', authMiddleware, submitCode);

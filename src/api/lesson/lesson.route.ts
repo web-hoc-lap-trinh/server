@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as lessonController from './lesson.controller';
 import * as lessonImageController from './lesson-image.controller';
+import * as tryItYourselfController from './try-it-yourself.controller';
 import { authMiddleware, checkAdmin } from '../../middlewares/auth.middleware';
 import multer from 'multer';
 
@@ -187,6 +188,111 @@ router.post('/', authMiddleware, checkAdmin, lessonController.createLesson);
  */
 router.get('/admin', authMiddleware, checkAdmin, lessonController.getAllLessonsAdmin);
 
+// ==========================================
+// TRY IT YOURSELF STATIC ROUTES (must come before /:lessonId)
+// ==========================================
+
+/**
+ * @swagger
+ * /api/lessons/try-it-yourself/languages:
+ *   get:
+ *     summary: Lấy danh sách ngôn ngữ hỗ trợ cho Try It Yourself
+ *     tags: [Try It Yourself]
+ *     responses:
+ *       200:
+ *         description: Danh sách ngôn ngữ hỗ trợ
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       language_id:
+ *                         type: integer
+ *                       name:
+ *                         type: string
+ *                         example: C++
+ *                       code:
+ *                         type: string
+ *                         example: cpp
+ *                       version:
+ *                         type: string
+ *                         example: "17"
+ */
+router.get('/try-it-yourself/languages', tryItYourselfController.getSupportedLanguages);
+
+/**
+ * @swagger
+ * /api/lessons/try-it-yourself/run:
+ *   post:
+ *     summary: Chạy code trực tiếp (không cần lesson) - Playground
+ *     tags: [Try It Yourself]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - language_code
+ *               - source_code
+ *             properties:
+ *               language_code:
+ *                 type: string
+ *                 description: Mã ngôn ngữ (cpp, python, javascript, java, c)
+ *                 example: cpp
+ *               source_code:
+ *                 type: string
+ *                 description: Mã nguồn cần chạy
+ *                 example: |
+ *                   #include <iostream>
+ *                   using namespace std;
+ *                   int main() {
+ *                       cout << "Hello, World!" << endl;
+ *                       return 0;
+ *                   }
+ *               input:
+ *                 type: string
+ *                 description: Input cho chương trình (optional)
+ *                 example: ""
+ *     responses:
+ *       200:
+ *         description: Kết quả thực thi code
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       description: Code chạy thành công hay không
+ *                     output:
+ *                       type: string
+ *                       description: Output của chương trình
+ *                     error:
+ *                       type: string
+ *                       description: Thông báo lỗi (nếu có)
+ *                     execution_time:
+ *                       type: number
+ *                       description: Thời gian thực thi (ms)
+ *                     status:
+ *                       type: string
+ *                       enum: [success, compile_error, runtime_error, timeout, memory_limit]
+ */
+router.post('/try-it-yourself/run', tryItYourselfController.runCodeDirect);
+
 /**
  * @swagger
  * /api/lessons/category/{categoryId}:
@@ -312,5 +418,239 @@ router.get('/category/:categoryId', lessonController.getLessonsByCategory);
 router.get('/:lessonId', lessonController.getLesson);
 router.put('/:lessonId', authMiddleware, checkAdmin, lessonController.updateLesson);
 router.delete('/:lessonId', authMiddleware, checkAdmin, lessonController.deleteLesson);
+
+// ==========================================
+// TRY IT YOURSELF LESSON-SPECIFIC ROUTES
+// ==========================================
+
+/**
+ * @swagger
+ * /api/lessons/{lessonId}/try-it-yourself:
+ *   get:
+ *     summary: Lấy Try It Yourself của một bài học
+ *     tags: [Try It Yourself]
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     responses:
+ *       200:
+ *         description: Thông tin Try It Yourself
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: object
+ *                   nullable: true
+ *                   properties:
+ *                     try_it_yourself_id:
+ *                       type: integer
+ *                     lesson_id:
+ *                       type: integer
+ *                     language:
+ *                       type: object
+ *                       properties:
+ *                         language_id:
+ *                           type: integer
+ *                         name:
+ *                           type: string
+ *                         code:
+ *                           type: string
+ *                         version:
+ *                           type: string
+ *                     example_code:
+ *                       type: string
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *
+ *   post:
+ *     summary: "[ADMIN] Tạo Try It Yourself cho bài học"
+ *     tags: [Try It Yourself]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - language_code
+ *               - example_code
+ *             properties:
+ *               language_code:
+ *                 type: string
+ *                 description: Mã ngôn ngữ (cpp, python, javascript, java, c)
+ *                 example: cpp
+ *               example_code:
+ *                 type: string
+ *                 description: Code mẫu hiển thị cho người dùng
+ *                 example: |
+ *                   #include <iostream>
+ *                   using namespace std;
+ *                   int main() {
+ *                       // Viết code của bạn ở đây
+ *                       cout << "Hello, World!" << endl;
+ *                       return 0;
+ *                   }
+ *     responses:
+ *       201:
+ *         description: Tạo Try It Yourself thành công
+ *       400:
+ *         description: Bài học đã có Try It Yourself hoặc ngôn ngữ không hợp lệ
+ *       403:
+ *         description: Không có quyền Admin
+ *
+ *   put:
+ *     summary: "[ADMIN] Cập nhật Try It Yourself của bài học"
+ *     tags: [Try It Yourself]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               language_code:
+ *                 type: string
+ *                 description: Mã ngôn ngữ mới (optional)
+ *               example_code:
+ *                 type: string
+ *                 description: Code mẫu mới (optional)
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *       404:
+ *         description: Không tìm thấy Try It Yourself
+ *       403:
+ *         description: Không có quyền Admin
+ *
+ *   delete:
+ *     summary: "[ADMIN] Xóa Try It Yourself của bài học"
+ *     tags: [Try It Yourself]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     responses:
+ *       200:
+ *         description: Xóa thành công
+ *       404:
+ *         description: Không tìm thấy Try It Yourself
+ *       403:
+ *         description: Không có quyền Admin
+ */
+router.get('/:lessonId/try-it-yourself', tryItYourselfController.getTryItYourself);
+router.post('/:lessonId/try-it-yourself', authMiddleware, checkAdmin, tryItYourselfController.createTryItYourself);
+router.put('/:lessonId/try-it-yourself', authMiddleware, checkAdmin, tryItYourselfController.updateTryItYourself);
+router.delete('/:lessonId/try-it-yourself', authMiddleware, checkAdmin, tryItYourselfController.deleteTryItYourself);
+
+/**
+ * @swagger
+ * /api/lessons/{lessonId}/try-it-yourself/run:
+ *   post:
+ *     summary: Chạy code trong Try It Yourself của bài học
+ *     tags: [Try It Yourself]
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - source_code
+ *             properties:
+ *               source_code:
+ *                 type: string
+ *                 description: Mã nguồn người dùng muốn chạy
+ *                 example: |
+ *                   #include <iostream>
+ *                   using namespace std;
+ *                   int main() {
+ *                       int a, b;
+ *                       cin >> a >> b;
+ *                       cout << a + b << endl;
+ *                       return 0;
+ *                   }
+ *               input:
+ *                 type: string
+ *                 description: Input cho chương trình (optional)
+ *                 example: "5 3"
+ *     responses:
+ *       200:
+ *         description: Kết quả thực thi code
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     success:
+ *                       type: boolean
+ *                       description: Code chạy thành công hay không
+ *                     output:
+ *                       type: string
+ *                       description: Output của chương trình
+ *                       example: "8"
+ *                     error:
+ *                       type: string
+ *                       description: Thông báo lỗi (nếu có)
+ *                     execution_time:
+ *                       type: number
+ *                       description: Thời gian thực thi (ms)
+ *                       example: 15
+ *                     status:
+ *                       type: string
+ *                       enum: [success, compile_error, runtime_error, timeout, memory_limit]
+ *                       example: success
+ *       404:
+ *         description: Bài học không có Try It Yourself
+ */
+router.post('/:lessonId/try-it-yourself/run', tryItYourselfController.runCode);
 
 export default router;

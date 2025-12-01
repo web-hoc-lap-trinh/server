@@ -5,10 +5,12 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  OneToOne,
   JoinColumn,
 } from 'typeorm';
 import { Category } from '../category/category.entity';
 import { User } from '../auth/user.entity';
+import { TryItYourself } from './try-it-yourself.entity';
 
 @Entity('lessons')
 export class Lesson {
@@ -59,4 +61,7 @@ export class Lesson {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'created_by' })
   created_by_user!: User;
+
+  @OneToOne(() => TryItYourself, (tryItYourself) => tryItYourself.lesson, { cascade: true })
+  tryItYourself?: TryItYourself;
 }

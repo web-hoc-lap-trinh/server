@@ -39,7 +39,7 @@ export const getAllLessonsAdmin = asyncHandler(async (req: Request, res: Respons
 });
 
 export const createLesson = asyncHandler(async (req: Request, res: Response) => {
-    const { category_id, title, content, description, difficulty_level, order_index } = req.body;
+    const { category_id, title, content, description, difficulty_level, order_index, try_it_yourself } = req.body;
     const userId = req.user!.user_id; 
     const newLesson = await lessonService.createLesson({ 
         category_id, 
@@ -47,7 +47,8 @@ export const createLesson = asyncHandler(async (req: Request, res: Response) => 
         content, 
         description, 
         difficulty_level, 
-        order_index 
+        order_index,
+        try_it_yourself,
     }, userId);
 
     createdResponse(res, 'Tạo Bài học thành công', newLesson);

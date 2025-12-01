@@ -1,8 +1,12 @@
 import { AppDataSource } from '../../config/data-source';
 import { Lesson } from './lesson.entity';
-import { NotFoundError, ConflictError } from '../../utils/apiResponse';
+import { TryItYourself } from './try-it-yourself.entity';
+import { Language } from '../problem/language.entity';
+import { NotFoundError, ConflictError, BadRequestError } from '../../utils/apiResponse';
 
 const lessonRepository = AppDataSource.getRepository(Lesson);
+const tryItYourselfRepository = AppDataSource.getRepository(TryItYourself);
+const languageRepository = AppDataSource.getRepository(Language);
 
 export const getLessonsByCategoryId = async (categoryId: number) => {
     return await lessonRepository.find({
@@ -46,17 +50,7 @@ export const getAllLessons = async () => {
 export const getLessonById = async (lessonId: number) => {
   const lesson = await lessonRepository.findOne({
     where: { lesson_id: lessonId, is_published: true },
-    relations: ['category'], 
-    select: [
-      'lesson_id',
-      'title',
-      'description',
-      'content', 
-      'difficulty_level',
-      'order_index',
-      'view_count',
-      'updated_at',
-    ] as (keyof Lesson)[],
+    relations: ['category', 'tryItYourself', 'tryItYourself.language'], 
   });
 
   if (!lesson) {
@@ -114,6 +108,10 @@ export const createLesson = async (
         description?: string;
         difficulty_level?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED';
         order_index?: number;
+        try_it_yourself?: {
+            language_code: string;
+            example_code: string;
+        };
     },
     userId: number
 ) => {
@@ -122,12 +120,42 @@ export const createLesson = async (
         throw new ConflictError('Bài học với tiêu đề này đã tồn tại.');
     }
 
+    // Validate language if try_it_yourself is provided
+    let languageId: number | undefined;
+    if (data.try_it_yourself) {
+        const language = await languageRepository.findOne({
+            where: { code: data.try_it_yourself.language_code, is_active: true },
+        });
+        if (!language) {
+            throw new BadRequestError(`Language '${data.try_it_yourself.language_code}' is not supported or not active`);
+        }
+        languageId = language.language_id;
+    }
+
+    // Create lesson
+    const { try_it_yourself, ...lessonData } = data;
     const newLesson = lessonRepository.create({
-        ...data,
+        ...lessonData,
         created_by: userId,
         is_published: false,
     });
-    return await lessonRepository.save(newLesson);
+    const savedLesson = await lessonRepository.save(newLesson);
+
+    // Create Try It Yourself if provided
+    if (try_it_yourself && languageId) {
+        const tryItYourself = tryItYourselfRepository.create({
+            lesson_id: savedLesson.lesson_id,
+            language_id: languageId,
+            example_code: try_it_yourself.example_code,
+        });
+        await tryItYourselfRepository.save(tryItYourself);
+    }
+
+    // Return lesson with try_it_yourself relation
+    return await lessonRepository.findOne({
+        where: { lesson_id: savedLesson.lesson_id },
+        relations: ['tryItYourself', 'tryItYourself.language'],
+    });
 };
 
 export const updateLesson = async (lessonId: number, updateData: Partial<Lesson>) => {
