@@ -7,10 +7,12 @@ import {
   ManyToOne,
   OneToOne,
   JoinColumn,
+  OneToMany,
 } from 'typeorm';
 import { Category } from '../category/category.entity';
 import { User } from '../auth/user.entity';
 import { TryItYourself } from './try-it-yourself.entity';
+import { Discussion } from '../community/discussion.entity'; 
 
 @Entity('lessons')
 export class Lesson {
@@ -64,4 +66,7 @@ export class Lesson {
 
   @OneToOne(() => TryItYourself, (tryItYourself) => tryItYourself.lesson, { cascade: true })
   tryItYourself?: TryItYourself;
+
+  @OneToMany(() => Discussion, (discussion) => discussion.lesson)
+  discussions?: Discussion[]; 
 }

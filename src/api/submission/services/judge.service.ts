@@ -19,6 +19,7 @@ import { Language } from '../../problem/language.entity';
 import { User } from '../../auth/user.entity';
 import * as dockerRunner from './docker-runner.service';
 import * as submissionService from '../submission.service';
+import { emitSubmissionStatusUpdate } from '../../../realtime/events';
 
 const submissionRepository = AppDataSource.getRepository(Submission);
 const problemRepository = AppDataSource.getRepository(Problem);
@@ -67,6 +68,10 @@ export async function judgeSubmission(jobData: JudgeJobData): Promise<JudgeResul
   try {
     // Update status to running
     await submissionService.updateSubmissionStatus(submissionId, SubmissionStatus.RUNNING);
+    emitSubmissionStatusUpdate({
+        submission_id: submissionId,
+        status: SubmissionStatus.RUNNING,
+    });
 
     // Fetch submission details
     const submission = await submissionRepository.findOne({
@@ -195,6 +200,16 @@ export async function judgeSubmission(jobData: JudgeJobData): Promise<JudgeResul
     // Update user progress and problem statistics
     await updateProgressAndStats(userId, problemId, finalStatus === SubmissionStatus.ACCEPTED, pointsEarned);
 
+    emitSubmissionStatusUpdate({
+        submission_id: submissionId,
+        status: finalStatus,
+        execution_time: result.executionTime,
+        memory_used: result.memoryUsed,
+        test_cases_passed: result.testCasesPassed,
+        total_test_cases: result.totalTestCases,
+        error_message: result.errorMessage,
+    }); 
+
     const totalTime = Date.now() - startTime;
     // Evaluation completed
 
@@ -223,6 +238,11 @@ export async function judgeSubmission(jobData: JudgeJobData): Promise<JudgeResul
     };
 
     await updateSubmissionResult(submissionId, errorResult);
+    emitSubmissionStatusUpdate({
+        submission_id: submissionId,
+        status: SubmissionStatus.INTERNAL_ERROR,
+        error_message: errorResult.errorMessage,
+    });
     return errorResult;
   }
 }

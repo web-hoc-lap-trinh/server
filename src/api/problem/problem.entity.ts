@@ -13,6 +13,7 @@ import {
 import { User } from '../auth/user.entity';
 import { TestCase } from './testcase.entity';
 import { Tag } from '../tag/tag.entity';
+import { Discussion } from '../community/discussion.entity'; 
 
 export enum ProblemDifficulty {
   EASY = 'EASY',
@@ -125,4 +126,7 @@ export class Problem {
   // Submissions relation - uses forward reference to avoid circular dependency
   @OneToMany('Submission', 'problem')
   submissions!: any[];
+  
+  @OneToMany(() => Discussion, (discussion) => discussion.problem)
+  discussions?: Discussion[]; 
 }

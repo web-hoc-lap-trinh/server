@@ -355,15 +355,14 @@ export async function executeSynchronously(data: JudgeJobData): Promise<JudgeRes
  */
 export async function addJudgeJobWithFallback(data: JudgeJobData): Promise<void> {
   try {
-    if (judgeQueue) {
+    if (judgeQueue && judgeWorker) { 
       await addJudgeJob(data);
     } else {
-      // Fallback to synchronous execution
       await executeSynchronously(data);
     }
   } catch (error: any) {
-    // If queue fails, try synchronous execution
     if (error.code === 'ECONNREFUSED' || error.message?.includes('Redis')) {
+      console.warn(`[Queue] Redis connection failed, executing submission ${data.submissionId} synchronously.`);
       await executeSynchronously(data);
     } else {
       throw error;
