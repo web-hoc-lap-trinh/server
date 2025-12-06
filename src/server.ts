@@ -7,6 +7,8 @@ import { AppDataSource } from './config/data-source';
 import mysql from 'mysql2/promise';
 import { initializeQueue, startWorker } from './api/submission/services/queue.service';
 import { checkDockerAvailable } from './api/submission/services/docker-runner.service';
+import http from 'http';
+import { initializeRealtimeServer } from './realtime'; 
 
 const PORT = process.env.PORT || 3000;
 const ENABLE_WORKER = process.env.ENABLE_WORKER !== 'false'; // Enable by default
@@ -93,8 +95,13 @@ const startServer = async () => {
     // Initialize judge system
     await initializeJudgeSystem();
 
+    const httpServer = http.createServer(app);
+
+    initializeRealtimeServer(httpServer); 
+
     app.listen(PORT, () => {
       console.log(`🚀 Server đang chạy tại http://localhost:${PORT}`);
+      console.log(`📡 Realtime WS tại ws://localhost:${PORT}/ws/socket.io`);
       console.log(`📚 API Docs: http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {

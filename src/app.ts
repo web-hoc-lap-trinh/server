@@ -16,6 +16,7 @@ import { authMiddleware } from './middlewares/auth.middleware';
 import { addTagsToProblem, removeTagsFromProblem, setTagsForProblem, getTagsForProblem } from './api/tag/tag.controller';
 import { getAllConversations } from './api/problem/ai.controller';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware';
+import communityRoutes from './api/community/community.route';
 
 const app: Express = express();
 
@@ -63,6 +64,8 @@ app.delete('/api/problems/:id/tags', authMiddleware, removeTagsFromProblem);
 
 // AI Chat - get all conversations for current user
 app.get('/api/ai/conversations', authMiddleware, getAllConversations);
+
+app.use('/api/community', communityRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Chào mừng đến với Codery API! Truy cập /api-docs để xem tài liệu.');
