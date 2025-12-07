@@ -51,15 +51,26 @@ export const updateProfile = async (
     if (body.full_name) updateData.full_name = body.full_name;
 
     if (avatarFile) {
-        try {
-            const cloudinaryResponse = await uploadToCloudinary.uploader.upload(avatarFile.path, { folder: 'avatars' });
-            updateData.avatar_url = cloudinaryResponse.secure_url; 
+      try {
+        const cloudinaryResponse = await new Promise((resolve, reject) => {
+          const uploadStream = uploadToCloudinary.uploader.upload_stream(
+            { folder: 'avatars' },
+            (error, result) => {
+              if (error) reject(error);
+              else resolve(result);
+            }
+          );
 
-        } catch (error) {
-            console.error("Cloudinary upload failed:", error);
-            throw new BadRequestError('Upload ảnh đại diện thất bại.');
-        }
+          uploadStream.end(avatarFile.buffer);
+        });
+
+        updateData.avatar_url = (cloudinaryResponse as any).secure_url;
+      } catch (error) {
+        console.error("Cloudinary upload failed:", error);
+        throw new BadRequestError('Upload ảnh đại diện thất bại.');
+      }
     }
+
 
     if (Object.keys(updateData).length === 0) {
         return getProfile(userId);
@@ -73,89 +84,30 @@ export const updateProfile = async (
     return getProfile(userId);
 };
 
-export const changePassword = async (userId: number, currentPassword: string, newPassword: string) => {
+export const changePassword = async (userId: number, oldPassword: string, newPassword: string) => {
     const user = await userRepository
         .createQueryBuilder('user')
         .where('user.user_id = :userId', { userId })
         .addSelect('user.password_hash')
         .getOne();
 
-    if (!user || !(await bcryptjs.compare(currentPassword, user.password_hash))) {
+    if (!user) {
+        throw new NotFoundError('Người dùng không tồn tại.');
+    }
+
+    const isValidPassword = await bcryptjs.compare(oldPassword, user.password_hash);
+    if (!isValidPassword) {
         throw new UnauthorizedError('Mật khẩu hiện tại không đúng.');
     }
 
     const hashedPassword = await bcryptjs.hash(newPassword, 10);
+
     await userRepository.update(
-        { user_id: userId }, 
+        { user_id: userId },
         { password_hash: hashedPassword }
     );
-    
-    return getProfile(userId); 
-};
 
-export const requestChangePasswordOtp = async (userId: number) => {
-  const user = await userRepository.findOne({ where: { user_id: userId } });
-  if (!user) {
-    throw new NotFoundError('Không tìm thấy người dùng');
-  }
-
-  const otp = generateOtp();
-  const expires = new Date(Date.now() + 5 * 60 * 1000);
-
-  await userRepository.update(
-    { user_id: userId },
-    {
-      change_password_otp: otp,
-      change_password_otp_expires: expires,
-    }
-  );
-
-  await sendEmail(
-    user.email,
-    'Xác nhận thay đổi mật khẩu Codery',
-    `Mã OTP để thay đổi mật khẩu của bạn là: ${otp}. Mã này sẽ hết hạn sau 5 phút.`
-  );
-
-  return { message: 'Đã gửi OTP xác nhận qua email.' };
-};
-
-export const verifyChangePassword = async (
-  userId: number,
-  otp: string,
-  newPassword: string
-) => {
-  const user = await userRepository
-    .createQueryBuilder('user')
-    .where('user.user_id = :userId', { userId })
-    .addSelect([
-      'user.change_password_otp',
-      'user.change_password_otp_expires',
-    ])
-    .getOne();
-
-  if (!user) {
-    throw new NotFoundError('Không tìm thấy người dùng');
-  }
-
-  if (
-    user.change_password_otp !== otp ||
-    !user.change_password_otp_expires ||
-    new Date(user.change_password_otp_expires) < new Date()
-  ) {
-    throw new BadRequestError('OTP không hợp lệ hoặc đã hết hạn');
-  }
-
-  const hashedPassword = await bcryptjs.hash(newPassword, 10);
-
-  await userRepository.update(
-    { user_id: userId },
-    {
-      password_hash: hashedPassword,
-      change_password_otp: null,
-      change_password_otp_expires: null,
-    }
-  );
-  return getProfile(userId);
+    return getProfile(userId);
 };
 
 
