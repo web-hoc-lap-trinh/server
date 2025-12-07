@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import * as profileService from './profile.service';
 import { successResponse } from '../../utils/apiResponse';
 import { asyncHandler } from '../../middlewares/errorHandler.middleware';
-import { BadRequestError } from '../../utils/apiResponse';
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.user_id;
@@ -22,20 +21,15 @@ export const updateProfile = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const changePassword = asyncHandler(async (req: Request, res: Response) => {
-  const { currentPassword, newPassword } = req.body;
-  const userId = req.user!.user_id;
-  const user = await profileService.changePassword(userId, currentPassword, newPassword);
-  successResponse(res, 'Đổi mật khẩu thành công', { user }); 
-});
+  const { oldPassword, newPassword } = req.body; 
 
-export const requestChangePassword = asyncHandler(async (req: Request, res: Response) => {
-    const result = await profileService.requestChangePasswordOtp(req.user!.user_id);
-    successResponse(res, result.message);
-});
+  if (!oldPassword || !newPassword) {
+    throw new Error("Missing required fields");
+  }
 
-export const verifyChangePassword = asyncHandler(async (req: Request, res: Response) => {
-  const { otp, newPassword } = req.body;
   const userId = req.user!.user_id;
-  const user = await profileService.verifyChangePassword(userId, otp, newPassword); 
-  successResponse(res, 'Đổi mật khẩu thành công', { user });
+
+  await profileService.changePassword(userId, oldPassword, newPassword); 
+
+  successResponse(res, 'Đổi mật khẩu thành công');
 });
