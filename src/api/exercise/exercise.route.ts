@@ -265,6 +265,121 @@ router.get('/lesson/:lessonId', exerciseController.getExercisesByLesson);
  */
 router.get('/lesson/:lessonId/start', exerciseController.getFirstExerciseByLesson);
 
+// ==================== SUBMISSION HISTORY ROUTES (Must be before /:exerciseId) ====================
+
+/**
+ * @swagger
+ * /api/exercises/history:
+ *   get:
+ *     summary: "Xem toàn bộ lịch sử làm bài"
+ *     description: "Lấy lịch sử làm bài của người dùng hiện tại (tất cả lesson)"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Số trang (bắt đầu từ 1)
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Số lượng bản ghi mỗi trang
+ *       - in: query
+ *         name: lesson_id
+ *         schema:
+ *           type: integer
+ *         description: Lọc theo lesson ID
+ *       - in: query
+ *         name: only_correct
+ *         schema:
+ *           type: boolean
+ *         description: Chỉ lấy câu trả lời đúng
+ *     responses:
+ *       200:
+ *         description: Lấy lịch sử thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                 result:
+ *                   type: object
+ *                   properties:
+ *                     total:
+ *                       type: integer
+ *                       description: Tổng số bản ghi
+ *                     page:
+ *                       type: integer
+ *                       description: Trang hiện tại
+ *                     limit:
+ *                       type: integer
+ *                       description: Số bản ghi mỗi trang
+ *                     total_pages:
+ *                       type: integer
+ *                       description: Tổng số trang
+ *                     has_next:
+ *                       type: boolean
+ *                       description: Có trang tiếp theo không
+ *                     has_prev:
+ *                       type: boolean
+ *                       description: Có trang trước không
+ *                     submissions:
+ *                       type: array
+ */
+router.get('/history', authMiddleware, exerciseController.getUserHistory);
+
+/**
+ * @swagger
+ * /api/exercises/stats:
+ *   get:
+ *     summary: "Xem thống kê làm bài tập"
+ *     description: "Lấy thống kê tổng hợp của người dùng hiện tại"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lấy thống kê thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                 result:
+ *                   type: object
+ *                   properties:
+ *                     total_submissions:
+ *                       type: integer
+ *                     correct_submissions:
+ *                       type: integer
+ *                     overall_success_rate:
+ *                       type: integer
+ *                     unique_exercises_attempted:
+ *                       type: integer
+ *                     unique_lessons_attempted:
+ *                       type: integer
+ *                     first_attempt_success_rate:
+ *                       type: integer
+ *                     average_time_spent_seconds:
+ *                       type: integer
+ */
+router.get('/stats', authMiddleware, exerciseController.getUserStats);
+
 /**
  * @swagger
  * /api/exercises/{exerciseId}:
@@ -305,6 +420,8 @@ router.get('/:exerciseId', exerciseController.getExercise);
  *   post:
  *     summary: Nộp câu trả lời cho một bài tập
  *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: exerciseId
@@ -325,6 +442,10 @@ router.get('/:exerciseId', exerciseController.getExercise);
  *                 type: string
  *                 description: Câu trả lời (A/B/C/D hoặc TRUE/FALSE)
  *                 example: "A"
+ *               time_spent_seconds:
+ *                 type: integer
+ *                 description: Thời gian làm bài (giây)
+ *                 example: 30
  *     responses:
  *       200:
  *         description: Kết quả kiểm tra
@@ -342,7 +463,75 @@ router.get('/:exerciseId', exerciseController.getExercise);
  *                 result:
  *                   $ref: '#/components/schemas/AnswerResult'
  */
-router.post('/:exerciseId/submit', exerciseController.submitAnswer);
+router.post('/:exerciseId/submit', authMiddleware, exerciseController.submitAnswer);
+
+/**
+ * @swagger
+ * /api/exercises/{exerciseId}/history:
+ *   get:
+ *     summary: "Xem lịch sử làm bài tập cụ thể"
+ *     description: "Lấy tất cả lần làm của người dùng hiện tại cho một exercise"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: exerciseId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài tập
+ *     responses:
+ *       200:
+ *         description: Lấy lịch sử thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "Lấy lịch sử làm bài tập thành công"
+ *                 result:
+ *                   type: object
+ *                   properties:
+ *                     exercise_id:
+ *                       type: integer
+ *                     total_attempts:
+ *                       type: integer
+ *                     correct_attempts:
+ *                       type: integer
+ *                     success_rate:
+ *                       type: integer
+ *                       description: "Tỷ lệ thành công (%)"
+ *                     first_attempt_correct:
+ *                       type: boolean
+ *                     submissions:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           submission_id:
+ *                             type: integer
+ *                           user_answer:
+ *                             type: string
+ *                           correct_answer:
+ *                             type: string
+ *                           is_correct:
+ *                             type: boolean
+ *                           time_spent_seconds:
+ *                             type: integer
+ *                             nullable: true
+ *                           attempt_number:
+ *                             type: integer
+ *                           submitted_at:
+ *                             type: string
+ *                             format: date-time
+ */
+router.get('/:exerciseId/history', authMiddleware, exerciseController.getExerciseHistory);
 
 // ==================== ADMIN ROUTES ====================
 
@@ -529,5 +718,55 @@ router.delete('/:exerciseId', authMiddleware, checkAdmin, exerciseController.del
  *         description: Sắp xếp thành công
  */
 router.put('/admin/lesson/:lessonId/reorder', authMiddleware, checkAdmin, exerciseController.reorderExercises);
+
+/**
+ * @swagger
+ * /api/exercises/lesson/{lessonId}/history:
+ *   get:
+ *     summary: "Xem lịch sử làm bài của cả bài học"
+ *     description: "Lấy lịch sử làm tất cả exercise trong một lesson"
+ *     tags: [Exercise]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của bài học
+ *     responses:
+ *       200:
+ *         description: Lấy lịch sử thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 message:
+ *                   type: string
+ *                   example: "Lấy lịch sử làm bài của bài học thành công"
+ *                 result:
+ *                   type: object
+ *                   properties:
+ *                     lesson_id:
+ *                       type: integer
+ *                     total_submissions:
+ *                       type: integer
+ *                     correct_submissions:
+ *                       type: integer
+ *                     overall_success_rate:
+ *                       type: integer
+ *                     unique_exercises_attempted:
+ *                       type: integer
+ *                     exercises:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ */
+router.get('/lesson/:lessonId/history', authMiddleware, exerciseController.getLessonHistory);
 
 export default router;

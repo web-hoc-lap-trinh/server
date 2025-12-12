@@ -61,12 +61,17 @@ export const submitAnswer = asyncHandler(async (req: Request, res: Response) => 
     throw new BadRequestError('Invalid Exercise ID');
   }
 
-  const { answer } = req.body;
+  const { answer, time_spent_seconds } = req.body;
   if (!answer) {
     throw new BadRequestError('Vui lòng cung cấp câu trả lời');
   }
 
-  const result = await exerciseService.submitAnswer(exerciseId, answer);
+  const userId = (req as any).user?.user_id;
+  if (!userId) {
+    throw new BadRequestError('Không tìm thấy thông tin người dùng');
+  }
+
+  const result = await exerciseService.submitAnswer(exerciseId, answer, userId, time_spent_seconds);
   
   const message = result.is_correct 
     ? 'Chính xác!' 
@@ -169,4 +174,79 @@ export const reorderExercises = asyncHandler(async (req: Request, res: Response)
 
   const exercises = await exerciseService.reorderExercises(lessonId, orders);
   successResponse(res, 'Sắp xếp lại bài tập thành công', exercises);
+});
+
+// ==================== SUBMISSION HISTORY ENDPOINTS ====================
+
+/**
+ * Get submission history for a specific exercise
+ */
+export const getExerciseHistory = asyncHandler(async (req: Request, res: Response) => {
+  const exerciseId = parseInt(req.params.exerciseId);
+  if (isNaN(exerciseId)) {
+    throw new BadRequestError('Invalid Exercise ID');
+  }
+
+  const userId = (req as any).user?.user_id;
+  if (!userId) {
+    throw new BadRequestError('Không tìm thấy thông tin người dùng');
+  }
+
+  const history = await exerciseService.getExerciseSubmissionHistory(userId, exerciseId);
+  successResponse(res, 'Lấy lịch sử làm bài tập thành công', history);
+});
+
+/**
+ * Get submission history for a lesson
+ */
+export const getLessonHistory = asyncHandler(async (req: Request, res: Response) => {
+  const lessonId = parseInt(req.params.lessonId);
+  if (isNaN(lessonId)) {
+    throw new BadRequestError('Invalid Lesson ID');
+  }
+
+  const userId = (req as any).user?.user_id;
+  if (!userId) {
+    throw new BadRequestError('Không tìm thấy thông tin người dùng');
+  }
+
+  const history = await exerciseService.getLessonSubmissionHistory(userId, lessonId);
+  successResponse(res, 'Lấy lịch sử làm bài của bài học thành công', history);
+});
+
+/**
+ * Get all submission history for current user
+ */
+export const getUserHistory = asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req as any).user?.user_id;
+  if (!userId) {
+    throw new BadRequestError('Không tìm thấy thông tin người dùng');
+  }
+
+  const page = req.query.page ? parseInt(req.query.page as string) : 1;
+  const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+  const lessonId = req.query.lesson_id ? parseInt(req.query.lesson_id as string) : undefined;
+  const onlyCorrect = req.query.only_correct === 'true';
+
+  const history = await exerciseService.getUserSubmissionHistory(userId, {
+    page,
+    limit,
+    lessonId,
+    onlyCorrect: onlyCorrect || undefined,
+  });
+
+  successResponse(res, 'Lấy lịch sử làm bài thành công', history);
+});
+
+/**
+ * Get user exercise statistics
+ */
+export const getUserStats = asyncHandler(async (req: Request, res: Response) => {
+  const userId = (req as any).user?.user_id;
+  if (!userId) {
+    throw new BadRequestError('Không tìm thấy thông tin người dùng');
+  }
+
+  const stats = await exerciseService.getUserExerciseStats(userId);
+  successResponse(res, 'Lấy thống kê làm bài thành công', stats);
 });

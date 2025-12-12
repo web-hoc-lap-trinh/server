@@ -1,8 +1,10 @@
 import { AppDataSource } from '../../config/data-source';
 import { Exercise, ExerciseType, ExerciseOption } from './exercise.entity';
+import { ExerciseSubmission } from './exercise-submission.entity';
 import { NotFoundError, BadRequestError } from '../../utils/apiResponse';
 
 const exerciseRepository = AppDataSource.getRepository(Exercise);
+const submissionRepository = AppDataSource.getRepository(ExerciseSubmission);
 
 /**
  * Interface for exercise response with navigation info
@@ -107,7 +109,12 @@ export const getFirstExercise = async (lessonId: number): Promise<ExerciseWithNa
 /**
  * Submit answer and check result
  */
-export const submitAnswer = async (exerciseId: number, userAnswer: string): Promise<AnswerResult> => {
+export const submitAnswer = async (
+  exerciseId: number, 
+  userAnswer: string, 
+  userId: number,
+  timeSpentSeconds?: number
+): Promise<AnswerResult> => {
   const exercise = await exerciseRepository.findOne({
     where: { exercise_id: exerciseId },
   });
@@ -127,6 +134,25 @@ export const submitAnswer = async (exerciseId: number, userAnswer: string): Prom
   }
 
   const isCorrect = normalizedAnswer === exercise.correct_answer;
+
+  // Calculate attempt number for this user and exercise
+  const previousAttempts = await submissionRepository.count({
+    where: { user_id: userId, exercise_id: exerciseId },
+  });
+
+  // Save submission to history
+  const submission = submissionRepository.create({
+    user_id: userId,
+    exercise_id: exerciseId,
+    lesson_id: exercise.lesson_id,
+    user_answer: normalizedAnswer,
+    correct_answer: exercise.correct_answer,
+    is_correct: isCorrect,
+    time_spent_seconds: timeSpentSeconds || null,
+    attempt_number: previousAttempts + 1,
+  });
+
+  await submissionRepository.save(submission);
 
   // Get navigation info
   const allExercises = await exerciseRepository.find({
@@ -298,4 +324,176 @@ export const reorderExercises = async (lessonId: number, exerciseOrders: { exerc
   }
 
   return await getExercisesByLessonIdAdmin(lessonId);
+};
+
+// ==================== SUBMISSION HISTORY FUNCTIONS ====================
+
+/**
+ * Get submission history for a specific exercise by user
+ */
+export const getExerciseSubmissionHistory = async (userId: number, exerciseId: number) => {
+  const submissions = await submissionRepository.find({
+    where: { user_id: userId, exercise_id: exerciseId },
+    order: { submitted_at: 'DESC' },
+    relations: ['exercise'],
+  });
+
+  const totalAttempts = submissions.length;
+  const correctAttempts = submissions.filter(s => s.is_correct).length;
+  const firstAttemptCorrect = submissions.length > 0 && submissions[submissions.length - 1].is_correct;
+  
+  return {
+    exercise_id: exerciseId,
+    total_attempts: totalAttempts,
+    correct_attempts: correctAttempts,
+    success_rate: totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0,
+    first_attempt_correct: firstAttemptCorrect,
+    submissions: submissions.map(s => ({
+      submission_id: s.submission_id,
+      user_answer: s.user_answer,
+      correct_answer: s.correct_answer,
+      is_correct: s.is_correct,
+      time_spent_seconds: s.time_spent_seconds,
+      attempt_number: s.attempt_number,
+      submitted_at: s.submitted_at,
+    })),
+  };
+};
+
+/**
+ * Get all submission history for a lesson by user
+ */
+export const getLessonSubmissionHistory = async (userId: number, lessonId: number) => {
+  const submissions = await submissionRepository.find({
+    where: { user_id: userId, lesson_id: lessonId },
+    order: { submitted_at: 'DESC' },
+    relations: ['exercise'],
+  });
+
+  // Group by exercise
+  const groupedByExercise = submissions.reduce((acc, sub) => {
+    if (!acc[sub.exercise_id]) {
+      acc[sub.exercise_id] = [];
+    }
+    acc[sub.exercise_id].push(sub);
+    return acc;
+  }, {} as Record<number, ExerciseSubmission[]>);
+
+  // Calculate stats per exercise
+  const exerciseStats = Object.entries(groupedByExercise).map(([exerciseId, subs]) => {
+    const totalAttempts = subs.length;
+    const correctAttempts = subs.filter(s => s.is_correct).length;
+    const lastSubmission = subs[0]; // Already sorted DESC
+    const firstSubmission = subs[subs.length - 1];
+
+    return {
+      exercise_id: parseInt(exerciseId),
+      question: subs[0].exercise.question,
+      total_attempts: totalAttempts,
+      correct_attempts: correctAttempts,
+      success_rate: Math.round((correctAttempts / totalAttempts) * 100),
+      first_attempt_correct: firstSubmission.is_correct,
+      last_attempt_correct: lastSubmission.is_correct,
+      last_submitted_at: lastSubmission.submitted_at,
+    };
+  });
+
+  // Overall lesson stats
+  const totalSubmissions = submissions.length;
+  const correctSubmissions = submissions.filter(s => s.is_correct).length;
+  const uniqueExercises = Object.keys(groupedByExercise).length;
+
+  return {
+    lesson_id: lessonId,
+    total_submissions: totalSubmissions,
+    correct_submissions: correctSubmissions,
+    overall_success_rate: totalSubmissions > 0 ? Math.round((correctSubmissions / totalSubmissions) * 100) : 0,
+    unique_exercises_attempted: uniqueExercises,
+    exercises: exerciseStats,
+  };
+};
+
+/**
+ * Get all submission history for a user (across all lessons)
+ */
+export const getUserSubmissionHistory = async (
+  userId: number,
+  options?: {
+    page?: number;
+    limit?: number;
+    lessonId?: number;
+    onlyCorrect?: boolean;
+  }
+) => {
+  const { page = 1, limit = 50, lessonId, onlyCorrect } = options || {};
+  const offset = (page - 1) * limit;
+
+  const whereCondition: any = { user_id: userId };
+  if (lessonId) whereCondition.lesson_id = lessonId;
+  if (onlyCorrect !== undefined) whereCondition.is_correct = onlyCorrect;
+
+  const [submissions, total] = await submissionRepository.findAndCount({
+    where: whereCondition,
+    order: { submitted_at: 'DESC' },
+    relations: ['exercise'],
+    take: limit,
+    skip: offset,
+  });
+
+  const totalPages = Math.ceil(total / limit);
+
+  return {
+    total,
+    page,
+    limit,
+    total_pages: totalPages,
+    has_next: page < totalPages,
+    has_prev: page > 1,
+    submissions: submissions.map(s => ({
+      submission_id: s.submission_id,
+      exercise_id: s.exercise_id,
+      lesson_id: s.lesson_id,
+      question: s.exercise.question,
+      user_answer: s.user_answer,
+      correct_answer: s.correct_answer,
+      is_correct: s.is_correct,
+      time_spent_seconds: s.time_spent_seconds,
+      attempt_number: s.attempt_number,
+      submitted_at: s.submitted_at,
+    })),
+  };
+};
+
+/**
+ * Get user statistics across all exercises
+ */
+export const getUserExerciseStats = async (userId: number) => {
+  const submissions = await submissionRepository.find({
+    where: { user_id: userId },
+  });
+
+  const totalSubmissions = submissions.length;
+  const correctSubmissions = submissions.filter(s => s.is_correct).length;
+  const uniqueExercises = new Set(submissions.map(s => s.exercise_id)).size;
+  const uniqueLessons = new Set(submissions.map(s => s.lesson_id)).size;
+
+  // First attempt success rate
+  const firstAttempts = submissions.filter(s => s.attempt_number === 1);
+  const firstAttemptCorrect = firstAttempts.filter(s => s.is_correct).length;
+
+  // Average time spent (only for submissions with time data)
+  const submissionsWithTime = submissions.filter(s => s.time_spent_seconds !== null);
+  const avgTimeSpent = submissionsWithTime.length > 0
+    ? Math.round(submissionsWithTime.reduce((sum, s) => sum + (s.time_spent_seconds || 0), 0) / submissionsWithTime.length)
+    : 0;
+
+  return {
+    total_submissions: totalSubmissions,
+    correct_submissions: correctSubmissions,
+    overall_success_rate: totalSubmissions > 0 ? Math.round((correctSubmissions / totalSubmissions) * 100) : 0,
+    unique_exercises_attempted: uniqueExercises,
+    unique_lessons_attempted: uniqueLessons,
+    first_attempt_success_rate: firstAttempts.length > 0 ? Math.round((firstAttemptCorrect / firstAttempts.length) * 100) : 0,
+    average_time_spent_seconds: avgTimeSpent,
+  };
 };
