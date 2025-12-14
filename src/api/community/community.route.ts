@@ -252,6 +252,7 @@ router.delete('/discussions/:discussionId', authMiddleware, communityController.
  *               content:
  *                 type: string
  *                 example: "Đoạn thảo luận của mình là..."
+ *               parent_reply_id:
  *                 type: integer
  *                 nullable: true
  *                 description: Reply cha (dùng nếu trả lời một reply khác)
