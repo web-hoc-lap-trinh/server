@@ -252,7 +252,6 @@ router.delete('/discussions/:discussionId', authMiddleware, communityController.
  *               content:
  *                 type: string
  *                 example: "Đoạn thảo luận của mình là..."
- *               parent_reply_id:
  *                 type: integer
  *                 nullable: true
  *                 description: Reply cha (dùng nếu trả lời một reply khác)
@@ -268,7 +267,6 @@ router.delete('/discussions/:discussionId', authMiddleware, communityController.
  *               data:
  *                 reply_id: 12
  *                 content: "Đoạn thảo luận của mình là..."
- *                 parent_reply_id: 5
  *                 discussion_id: 7
  *                 created_at: "2025-12-04T10:09:38Z"
  *                 user:
@@ -295,13 +293,11 @@ router.delete('/discussions/:discussionId', authMiddleware, communityController.
  *                 items:
  *                   - reply_id: 12
  *                     content: "Đoạn thảo luận của mình là..."
- *                     parent_reply_id: 5
  *                     user:
  *                       user_id: 3
  *                       name: "User A"
  *                   - reply_id: 13
  *                     content: "Mình đồng ý"
- *                     parent_reply_id: null
  *                     user:
  *                       user_id: 4
  *                       name: "User B"

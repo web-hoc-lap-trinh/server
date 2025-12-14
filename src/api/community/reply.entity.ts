@@ -20,9 +20,6 @@ export class DiscussionReply {
     @Column()
     discussion_id!: number;
 
-    @Column({ nullable: true })
-    parent_reply_id!: number | null;
-
     @Column()
     user_id!: number;
 
@@ -35,9 +32,6 @@ export class DiscussionReply {
     @Column({ default: 0 })
     downvotes!: number;
 
-    @Column({ default: false })
-    is_accepted!: boolean;
-
     @CreateDateColumn()
     created_at!: Date;
 
@@ -48,13 +42,6 @@ export class DiscussionReply {
     @ManyToOne(() => Discussion, (discussion) => discussion.replies)
     @JoinColumn({ name: 'discussion_id' })
     discussion!: Discussion;
-
-    @ManyToOne(() => DiscussionReply, (reply) => reply.replies)
-    @JoinColumn({ name: 'parent_reply_id' })
-    parent_reply?: DiscussionReply;
-
-    @OneToMany(() => DiscussionReply, (reply) => reply.parent_reply)
-    replies?: DiscussionReply[]; // Replies of this reply (nested comments)
 
     @ManyToOne(() => User)
     @JoinColumn({ name: 'user_id' })
