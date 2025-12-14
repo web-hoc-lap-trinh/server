@@ -6,6 +6,7 @@ import { Language } from '../problem/language.entity';
 import { User } from '../auth/user.entity';
 import { BadRequestError, NotFoundError } from '../../utils/apiResponse';
 import * as problemService from '../problem/problem.service';
+import * as dailyActivityService from '../daily_activities/daily_activity.service';
 
 const submissionRepository = AppDataSource.getRepository(Submission);
 const problemRepository = AppDataSource.getRepository(Problem);
@@ -269,7 +270,6 @@ export const updateUserProgress = async (
   isAccepted: boolean,
   pointsEarned: number
 ): Promise<void> => {
-  // Check if this is user's first accepted submission for this problem
   const previouslyAccepted = await submissionRepository.count({
     where: {
       user_id: userId,
@@ -278,8 +278,9 @@ export const updateUserProgress = async (
     },
   });
 
-  // Only update solved count if this is the first accepted submission
-  if (isAccepted && previouslyAccepted === 1) {
+  const isFirstAccepted = isAccepted && previouslyAccepted === 0;
+
+  if (isFirstAccepted) {
     await userRepository
       .createQueryBuilder()
       .update(User)
@@ -291,14 +292,20 @@ export const updateUserProgress = async (
       .where('user_id = :userId', { userId })
       .execute();
   } else {
-    // Just update last_active
     await userRepository.update(userId, { last_active: new Date() });
   }
 
-  // Update problem statistics
+  if (isAccepted) {
+      await dailyActivityService.updateActivityAndStreak(
+          userId,
+          problemId,
+          pointsEarned,
+          isAccepted
+      );
+  }
+
   await problemService.updateProblemStats(problemId, isAccepted);
 };
-
 /**
  * Get submission statistics for a user
  */

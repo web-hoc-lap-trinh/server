@@ -567,3 +567,35 @@ export const getLanguages = async (req: Request, res: Response, next: NextFuncti
     next(error);
   }
 };
+
+/**
+ * @swagger
+ * /api/problems/daily-challenge:
+ *   get:
+ *     summary: Lấy bài tập Thử thách Hàng ngày (Daily Challenge)
+ *     tags: [Problems]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Chi tiết bài tập Daily Challenge
+ *       404:
+ *         description: Chưa có Challenge nào được setup cho hôm nay
+ */
+export const getDailyChallengeProblem = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const problem = await problemService.getDailyChallenge();
+
+    return successResponse(
+      res,
+      'Daily Challenge retrieved successfully',
+      problem
+    );
+  } catch (error) {
+    next(error);
+  }
+};

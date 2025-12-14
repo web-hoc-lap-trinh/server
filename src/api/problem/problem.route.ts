@@ -762,4 +762,27 @@ router.delete('/:problemId/ai/conversation', authMiddleware, aiController.delete
  */
 router.delete('/:problemId/ai/messages', authMiddleware, aiController.clearMessages);
 
+// ======================================================================
+// DAILY CHALLENGE ROUTES
+// ======================================================================
+
+/**
+ * @swagger
+ * /api/problems/daily-challenge:
+ *   get:
+ *     summary: Lấy bài tập Thử thách Hàng ngày (Daily Challenge)
+ *     tags: [Problems]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Chi tiết bài tập Daily Challenge
+ */
+router.get(
+  '/daily-challenge',
+  authMiddleware,
+  problemController.getDailyChallengeProblem
+);
+
+
 export default router;
