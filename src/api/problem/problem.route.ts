@@ -770,19 +770,58 @@ router.delete('/:problemId/ai/messages', authMiddleware, aiController.clearMessa
  * @swagger
  * /api/problems/daily-challenge:
  *   get:
- *     summary: Lấy bài tập Thử thách Hàng ngày (Daily Challenge)
+ *     summary: Lấy Bài tập Thử thách Hàng ngày (Daily Challenge)
  *     tags: [Problems]
  *     security:
  *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Chi tiết bài tập Daily Challenge
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Problem'
+ *             example:
+ *               success: true
+ *               message: "Daily Challenge retrieved successfully"
+ *               data:
+ *                 problem_id: 101
+ *                 title: "Sắp xếp tăng dần"
+ *                 description: "Yêu cầu sắp xếp một mảng..."
+ *                 difficulty: "MEDIUM"
+ *                 time_limit: 1000
+ *                 points: 100
+ *                 is_daily_challenge: true
+ *                 challenge_date: "2025-12-14"
+ *                 tags:
+ *                   - tag_id: 6
+ *                     name: "Sorting"
+ *
+ *       404:
+ *         description: Chưa có Challenge nào được setup cho hôm nay
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Chưa có Thử thách hàng ngày nào được thiết lập cho hôm nay."
+ *               error:
+ *                 details: {}
  */
 router.get(
   '/daily-challenge',
   authMiddleware,
   problemController.getDailyChallengeProblem
 );
+
 
 
 export default router;

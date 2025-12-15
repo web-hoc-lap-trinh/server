@@ -582,20 +582,12 @@ export const getLanguages = async (req: Request, res: Response, next: NextFuncti
  *       404:
  *         description: Chưa có Challenge nào được setup cho hôm nay
  */
-export const getDailyChallengeProblem = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  try {
-    const problem = await problemService.getDailyChallenge();
-
-    return successResponse(
-      res,
-      'Daily Challenge retrieved successfully',
-      problem
-    );
-  } catch (error) {
-    next(error);
-  }
+export const getDailyChallengeProblem = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const problem = await problemService.getDailyChallenge(); 
+        
+        return successResponse(res, 'Daily Challenge retrieved successfully', problem); 
+    } catch (error) {
+        next(error);
+    }
 };
