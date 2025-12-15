@@ -5,6 +5,7 @@ import { Language } from './language.entity';
 import { Tag } from '../tag/tag.entity';
 import { BadRequestError, NotFoundError } from '../../utils/apiResponse';
 import { In } from 'typeorm';
+import { getFormattedDate } from '../../utils/date.utils';
 
 const problemRepository = AppDataSource.getRepository(Problem);
 const testCaseRepository = AppDataSource.getRepository(TestCase);
@@ -505,4 +506,23 @@ export const getLanguageById = async (languageId: number): Promise<Language> => 
   }
 
   return language;
+};
+
+export const getDailyChallenge = async (): Promise<Problem> => {
+    const todayDate = getFormattedDate(new Date()); // YYYY-MM-DD
+    
+    const problem = await problemRepository.findOne({
+        where: {
+            is_daily_challenge: true,
+            challenge_date: todayDate as any, 
+            is_published: true, 
+        },
+        relations: ['tags', 'author'],
+    });
+
+    if (!problem) {
+        throw new NotFoundError('Chưa có Thử thách hàng ngày nào được thiết lập cho hôm nay.');
+    }
+
+    return problem;
 };
