@@ -79,21 +79,17 @@ export const deleteDiscussion = asyncHandler(async (req: Request, res: Response)
 
 export const createReply = asyncHandler(async (req: Request, res: Response) => {
     const discussionId = parseInt(req.params.discussionId);
-    const { content, parent_reply_id } = req.body;
+    const { content } = req.body; 
     const userId = req.user!.user_id;
-    
-    const parentReplyId = parent_reply_id ? parseInt(parent_reply_id) : undefined;
 
     const newReply = await communityService.createReply(
         discussionId, 
         content, 
         userId, 
-        parentReplyId
     );
 
     createdResponse(res, 'Tạo reply thành công', newReply);
 });
-
 export const getReplies = asyncHandler(async (req: Request, res: Response) => {
     const discussionId = parseInt(req.params.discussionId);
     const page = req.query.page ? parseInt(req.query.page as string) : 1;

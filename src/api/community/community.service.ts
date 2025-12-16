@@ -160,7 +160,6 @@ export const createReply = async (
     discussionId: number,
     content: string,
     userId: number,
-    parentReplyId?: number
 ) => {
     const discussion = await discussionRepository.findOne({
         where: { discussion_id: discussionId },
@@ -170,19 +169,10 @@ export const createReply = async (
     if (!discussion) {
         throw new NotFoundError('Discussion không tồn tại.');
     }
-
-    if (parentReplyId) {
-        const parentReply = await replyRepository.findOneBy({ reply_id: parentReplyId });
-        if (!parentReply) {
-            throw new NotFoundError('Parent Reply không tồn tại.');
-        }
-    }
-
     const newReply = replyRepository.create({
         discussion_id: discussionId,
         content: content,
         user_id: userId,
-        parent_reply_id: parentReplyId || null,
     });
 
     const savedReply = await replyRepository.save(newReply);

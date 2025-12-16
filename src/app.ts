@@ -17,6 +17,7 @@ import { addTagsToProblem, removeTagsFromProblem, setTagsForProblem, getTagsForP
 import { getAllConversations } from './api/problem/ai.controller';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.middleware';
 import communityRoutes from './api/community/community.route';
+import dailyActivityRoutes from './api/daily_activities/daily_activity.route';
 
 const app: Express = express();
 
@@ -66,6 +67,8 @@ app.delete('/api/problems/:id/tags', authMiddleware, removeTagsFromProblem);
 app.get('/api/ai/conversations', authMiddleware, getAllConversations);
 
 app.use('/api/community', communityRoutes);
+
+app.use('/api/daily-activities', dailyActivityRoutes);
 
 app.get('/', (req: Request, res: Response) => {
   res.send('Chào mừng đến với Codery API! Truy cập /api-docs để xem tài liệu.');
