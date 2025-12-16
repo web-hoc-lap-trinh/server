@@ -69,11 +69,8 @@ export class Problem {
   @Column({ type: 'boolean', default: false })
   is_published!: boolean;
 
-  @Column({ type: 'boolean', default: false })
+  @Column({ type: 'boolean', default: false, comment: 'Auto-managed by daily challenge scheduler' })
   is_daily_challenge!: boolean;
-
-  @Column({ type: 'date', nullable: true })
-  challenge_date!: Date | null;
 
   // ==========================================
   // NEW FIELDS FOR ONLINE JUDGE

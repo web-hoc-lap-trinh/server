@@ -8,7 +8,8 @@ import mysql from 'mysql2/promise';
 import { initializeQueue, startWorker } from './api/submission/services/queue.service';
 import { checkDockerAvailable } from './api/submission/services/docker-runner.service';
 import http from 'http';
-import { initializeRealtimeServer } from './realtime'; 
+import { initializeRealtimeServer } from './realtime';
+import { schedulerService } from './services/scheduler.service'; 
 
 const PORT = process.env.PORT || 3000;
 const ENABLE_WORKER = process.env.ENABLE_WORKER !== 'false'; // Enable by default
@@ -101,6 +102,12 @@ const startServer = async () => {
 
     // Initialize judge system
     await initializeJudgeSystem();
+
+    // Khởi động scheduler cho Daily Challenges
+    schedulerService.start();
+    
+    // Chạy ngay lập tức lần đầu (nếu muốn - comment dòng này nếu chỉ muốn chạy vào 0h00)
+    // await schedulerService.runDailyChallengeNow();
 
     const httpServer = http.createServer(app);
 

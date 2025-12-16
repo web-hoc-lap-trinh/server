@@ -508,21 +508,22 @@ export const getLanguageById = async (languageId: number): Promise<Language> => 
   return language;
 };
 
-export const getDailyChallenge = async (): Promise<Problem> => {
-    const todayDate = getFormattedDate(new Date()); // YYYY-MM-DD
-    
-    const problem = await problemRepository.findOne({
+export const getDailyChallenge = async (): Promise<Problem[]> => {
+    // Lấy tất cả daily challenges hiện tại (được quản lý bởi scheduler)
+    const problems = await problemRepository.find({
         where: {
             is_daily_challenge: true,
-            challenge_date: todayDate as any, 
             is_published: true, 
         },
         relations: ['tags', 'author'],
+        order: {
+            difficulty: 'ASC', // EASY -> MEDIUM -> HARD
+        },
     });
 
-    if (!problem) {
+    if (!problems || problems.length === 0) {
         throw new NotFoundError('Chưa có Thử thách hàng ngày nào được thiết lập cho hôm nay.');
     }
 
-    return problem;
+    return problems;
 };

@@ -591,3 +591,17 @@ export const getDailyChallengeProblem = async (req: Request, res: Response, next
         next(error);
     }
 };
+
+/**
+ * Trigger manual update của Daily Challenges (Admin only)
+ */
+export const updateDailyChallenges = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { schedulerService } = await import('../../services/scheduler.service');
+        await schedulerService.runDailyChallengeNow();
+        
+        return successResponse(res, 'Daily Challenges updated successfully'); 
+    } catch (error) {
+        next(error);
+    }
+};

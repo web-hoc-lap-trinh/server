@@ -138,6 +138,106 @@ router.get('/', authMiddleware, problemController.getProblems);
 
 /**
  * @swagger
+ * /api/problems/daily-challenge:
+ *   get:
+ *     summary: Lấy danh sách Daily Challenge của ngày hôm nay
+ *     description: |
+ *       Trả về 5 bài tập được chọn làm Daily Challenge (2 Easy, 2 Medium, 1 Hard).
+ *       
+ *       Daily Challenges được tự động cập nhật mỗi ngày lúc 0h00 (timezone Asia/Ho_Chi_Minh).
+ *       
+ *       **Lưu ý:** Endpoint này trả về mảng các Problem thay vì single Problem.
+ *     tags: [Problems]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Danh sách Daily Challenges
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Problem'
+ *             example:
+ *               success: true
+ *               data:
+ *                 - problem_id: 1
+ *                   title: "Two Sum"
+ *                   difficulty: "EASY"
+ *                   description: "Find two numbers that add up to target"
+ *                   is_daily_challenge: true
+ *                 - problem_id: 2
+ *                   title: "Valid Parentheses"
+ *                   difficulty: "EASY"
+ *                   is_daily_challenge: true
+ *       404:
+ *         description: Chưa có Challenge nào được setup cho hôm nay
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               message: "Chưa có Thử thách hàng ngày nào được thiết lập cho hôm nay."
+ *               error:
+ *                 details: {}
+ */
+router.get(
+  '/daily-challenge',
+  authMiddleware,
+  problemController.getDailyChallengeProblem
+);
+
+/**
+ * @swagger
+ * /api/problems/daily-challenge/update:
+ *   post:
+ *     summary: Cập nhật Daily Challenges thủ công
+ *     description: |
+ *       Trigger cập nhật Daily Challenges ngay lập tức (thay vì đợi đến 0h00).
+ *       
+ *       **Yêu cầu:** Quyền Admin
+ *       
+ *       **Chức năng:**
+ *       - Reset tất cả daily challenges cũ
+ *       - Chọn ngẫu nhiên 5 bài tập mới (2 Easy, 2 Medium, 1 Hard)
+ *       - Set is_daily_challenge = true cho các bài được chọn
+ *     tags: [Problems]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cập nhật thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *             example:
+ *               success: true
+ *               message: Daily Challenges updated successfully
+ *       403:
+ *         description: Không có quyền Admin
+ */
+router.post(
+  '/daily-challenge/update',
+  authMiddleware,
+  checkAdmin,
+  problemController.updateDailyChallenges
+);
+
+/**
+ * @swagger
  * /api/problems/{id}:
  *   get:
  *     summary: Lấy chi tiết bài tập
@@ -245,6 +345,8 @@ router.post('/', authMiddleware, checkAdmin, problemController.createProblem);
  *       Cập nhật thông tin bài tập.
  *       
  *       **Yêu cầu:** Quyền Admin
+ *       
+ *       **Lưu ý:** Có thể cập nhật tất cả các trường bao gồm is_daily_challenge
  *     tags: [Problems]
  *     security:
  *       - bearerAuth: []
@@ -261,6 +363,21 @@ router.post('/', authMiddleware, checkAdmin, problemController.createProblem);
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/CreateProblemRequest'
+ *           example:
+ *             title: Tổng Hai Số (Cập nhật)
+ *             description: "<p>Cho hai số nguyên <code>a</code> và <code>b</code>, hãy tính tổng của chúng.</p>"
+ *             difficulty: MEDIUM
+ *             tag_ids:
+ *               - 1
+ *               - 4
+ *             input_format: "Dòng đầu tiên chứa số nguyên a (-10^9 ≤ a ≤ 10^9)\nDòng thứ hai chứa số nguyên b (-10^9 ≤ b ≤ 10^9)"
+ *             output_format: "In ra một số nguyên duy nhất là tổng a + b"
+ *             constraints: "-10^9 ≤ a, b ≤ 10^9"
+ *             time_limit: 2000
+ *             memory_limit: 512
+ *             points: 150
+ *             is_published: true
+ *             is_daily_challenge: true
  *     responses:
  *       200:
  *         description: Cập nhật thành công
@@ -761,67 +878,5 @@ router.delete('/:problemId/ai/conversation', authMiddleware, aiController.delete
  *         description: Xóa tin nhắn thành công
  */
 router.delete('/:problemId/ai/messages', authMiddleware, aiController.clearMessages);
-
-// ======================================================================
-// DAILY CHALLENGE ROUTES
-// ======================================================================
-
-/**
- * @swagger
- * /api/problems/daily-challenge:
- *   get:
- *     summary: Lấy Bài tập Thử thách Hàng ngày (Daily Challenge)
- *     tags: [Problems]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Chi tiết bài tập Daily Challenge
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   $ref: '#/components/schemas/Problem'
- *             example:
- *               success: true
- *               message: "Daily Challenge retrieved successfully"
- *               data:
- *                 problem_id: 101
- *                 title: "Sắp xếp tăng dần"
- *                 description: "Yêu cầu sắp xếp một mảng..."
- *                 difficulty: "MEDIUM"
- *                 time_limit: 1000
- *                 points: 100
- *                 is_daily_challenge: true
- *                 challenge_date: "2025-12-14"
- *                 tags:
- *                   - tag_id: 6
- *                     name: "Sorting"
- *
- *       404:
- *         description: Chưa có Challenge nào được setup cho hôm nay
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ErrorResponse'
- *             example:
- *               success: false
- *               message: "Chưa có Thử thách hàng ngày nào được thiết lập cho hôm nay."
- *               error:
- *                 details: {}
- */
-router.get(
-  '/daily-challenge',
-  authMiddleware,
-  problemController.getDailyChallengeProblem
-);
-
-
 
 export default router;
