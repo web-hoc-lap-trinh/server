@@ -7,15 +7,21 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: codery
+      MYSQL_DATABASE: Codery
       MYSQL_USER: codery_user
       MYSQL_PASSWORD: codery_pass
     ports:
-      - "3306:3306"
+      - "3307:3306"  # Port bên ngoài:Port bên trong container
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./codery.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ./codery.sql:/docker-entrypoint-initdb.d/init.sql  # Tắt auto-import, dùng migrations thay thế
     command: --default-authentication-plugin=mysql_native_password
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - codery-network
 
@@ -25,7 +31,7 @@ services:
     container_name: codery-redis
     restart: always
     ports:
-      - "6379:6379"
+      - "6380:6379"  # Port bên ngoài:Port bên trong container
     volumes:
       - redis_data:/data
     networks:

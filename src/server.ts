@@ -14,24 +14,31 @@ const PORT = process.env.PORT || 3000;
 const ENABLE_WORKER = process.env.ENABLE_WORKER !== 'false'; // Enable by default
 const WORKER_CONCURRENCY = parseInt(process.env.WORKER_CONCURRENCY || '2');
 
-const createDatabaseIfNotExists = async () => {
-  try {
-    // Kết nối MySQL mà không chỉ định database
-    const connection = await mysql.createConnection({
-      host: process.env.DB_HOST,
-      port: 3306,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-    });
+const createDatabaseIfNotExists = async (retries = 5, delay = 3000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      // Kết nối MySQL mà không chỉ định database
+      const connection = await mysql.createConnection({
+        host: process.env.DB_HOST,
+        port: parseInt(process.env.DB_PORT || '3306'),
+        user: process.env.DB_USER,
+        password: process.env.DB_PASSWORD,
+      });
 
-    // Tạo database nếu chưa tồn tại
-    await connection.execute(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``);
-    console.log(`✅ Database '${process.env.DB_NAME}' is ready`);
+      // Tạo database nếu chưa tồn tại
+      await connection.execute(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``);
+      console.log(`✅ Database '${process.env.DB_NAME}' is ready`);
 
-    await connection.end();
-  } catch (error) {
-    console.error('❌ Error creating database:', error);
-    throw error;
+      await connection.end();
+      return; // Thành công, thoát khỏi hàm
+    } catch (error) {
+      if (i === retries - 1) {
+        console.error('❌ Error creating database after', retries, 'attempts:', error);
+        throw error;
+      }
+      console.log(`⏳ Waiting for database... (attempt ${i + 1}/${retries})`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
   }
 };
 
