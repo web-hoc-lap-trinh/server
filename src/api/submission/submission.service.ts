@@ -3,7 +3,7 @@ import { Submission, SubmissionStatus, ExecutionLogs, TestCaseResult } from './s
 import { Problem } from '../problem/problem.entity';
 import { TestCase } from '../problem/testcase.entity';
 import { Language } from '../problem/language.entity';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import { BadRequestError, NotFoundError } from '../../utils/apiResponse';
 import * as problemService from '../problem/problem.service';
 import * as dailyActivityService from '../daily_activities/daily_activity.service';

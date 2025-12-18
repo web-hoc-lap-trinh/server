@@ -1,6 +1,6 @@
 import { AppDataSource } from '../../config/data-source';
 import { DailyActivity } from './daily_activity.entity';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import { Problem } from '../problem/problem.entity';
 import { getFormattedDate, getYesterdayDate } from '../../utils/date.utils'; 
 import { NotFoundError } from '../../utils/apiResponse';

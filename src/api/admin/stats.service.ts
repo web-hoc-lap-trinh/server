@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../config/data-source';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import { Submission, SubmissionStatus } from '../submission/submission.entity';
 import { Problem } from '../problem/problem.entity';
 import { Lesson } from '../lesson/lesson.entity';

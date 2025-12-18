@@ -10,7 +10,7 @@ import {
   JoinColumn,
   JoinTable,
 } from 'typeorm';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import { TestCase } from './testcase.entity';
 import { Tag } from '../tag/tag.entity';
 import { Discussion } from '../community/discussion.entity'; 
