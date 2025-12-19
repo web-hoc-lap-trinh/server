@@ -31,6 +31,9 @@ export class User {
   })
   role!: string; 
 
+  @Column({ type: 'enum', enum: ['ACTIVE', 'BLOCKED'], default: 'ACTIVE' })
+  status!: string;
+
   @Column({ type: 'int', default: 0 })
   total_score!: number;
 

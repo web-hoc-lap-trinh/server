@@ -1,5 +1,5 @@
 import { AppDataSource } from '../../config/data-source';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import bcryptjs from 'bcryptjs';
 import sendEmail from '../../utils/sendEmail';
 import {

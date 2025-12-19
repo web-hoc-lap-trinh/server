@@ -8,7 +8,7 @@ import {
     CreateDateColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import { Problem } from '../problem/problem.entity';
 import { Lesson } from '../lesson/lesson.entity';
 import { DiscussionReply } from './reply.entity';

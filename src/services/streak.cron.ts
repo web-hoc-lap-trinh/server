@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { AppDataSource } from '../config/data-source';
-import { User } from '../api/auth/user.entity';
+import { User } from '../api/user/user.entity';
 import { DailyActivity } from '../api/daily_activities/daily_activity.entity';
 import { In } from 'typeorm';
 import { getFormattedDate, getYesterdayDate } from '../utils/date.utils'; 

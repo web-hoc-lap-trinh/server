@@ -6,7 +6,7 @@ import {
     JoinColumn,
     CreateDateColumn,
 } from 'typeorm';
-import { User } from '../auth/user.entity'; 
+import { User } from '../user/user.entity'; 
 
 @Entity('daily_activities')
 export class DailyActivity {

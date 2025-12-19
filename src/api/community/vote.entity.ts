@@ -7,7 +7,7 @@ import {
     CreateDateColumn,
     Unique
 } from 'typeorm';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import { Discussion } from './discussion.entity';
 import { DiscussionReply } from './reply.entity';
 

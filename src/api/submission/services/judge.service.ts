@@ -16,7 +16,7 @@ import { Submission, SubmissionStatus, ExecutionLogs, TestCaseResult } from '../
 import { Problem } from '../../problem/problem.entity';
 import { TestCase } from '../../problem/testcase.entity';
 import { Language } from '../../problem/language.entity';
-import { User } from '../../auth/user.entity';
+import { User } from '../../user/user.entity';
 import * as dockerRunner from './docker-runner.service';
 import * as submissionService from '../submission.service';
 import { emitSubmissionStatusUpdate } from '../../../realtime/events';

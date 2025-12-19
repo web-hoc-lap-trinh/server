@@ -10,7 +10,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { Category } from '../category/category.entity';
-import { User } from '../auth/user.entity';
+import { User } from '../user/user.entity';
 import { TryItYourself } from './try-it-yourself.entity';
 import { Discussion } from '../community/discussion.entity'; 
 
