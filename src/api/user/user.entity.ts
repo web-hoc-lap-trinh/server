@@ -55,12 +55,6 @@ export class User {
   @Column({ type: 'datetime', nullable: true, select: false })
   reset_otp_expires!: Date | null; 
 
-  @Column({ type: 'varchar', length: 10, nullable: true, select: false })
-  change_password_otp!: string | null;
-
-  @Column({ type: 'datetime', nullable: true, select: false })
-  change_password_otp_expires!: Date | null;
-  
   @Column({ type: 'boolean', default: false })
   is_verified!: boolean;
 

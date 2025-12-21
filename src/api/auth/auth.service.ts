@@ -112,8 +112,6 @@ export const verifyAccount = async ({
     reset_otp_expires,
     verification_otp,
     verification_otp_expires,
-    change_password_otp,
-    change_password_otp_expires,
     ...userResult
   } = user;
 
@@ -199,8 +197,6 @@ export const loginUser = async ({
     reset_otp_expires,
     verification_otp,
     verification_otp_expires,
-    change_password_otp,
-    change_password_otp_expires,
     ...userResult
   } = user;
 
@@ -272,8 +268,6 @@ export const resetPassword = async ({
     reset_otp_expires,
     verification_otp,
     verification_otp_expires,
-    change_password_otp,
-    change_password_otp_expires,
     ...result 
   } = user;
   return result;
