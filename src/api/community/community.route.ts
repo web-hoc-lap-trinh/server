@@ -173,11 +173,11 @@ router.get('/discussions', communityController.getDiscussions);
  *                 enum: [DISCUSSION, QUESTION]
  *               is_solution:
  *                 type: boolean
- *           example:
- *             title: "Updated Title"
- *             content: "Updated content..."
- *             discussion_type: "DISCUSSION"
- *             is_solution: false
+ *             example:
+ *               title: "Updated Title"
+ *               content: "Updated content..."
+ *               discussion_type: "DISCUSSION"
+ *               is_solution: false
  *     responses:
  *       200:
  *         description: Update successful — trả full object sau khi update
