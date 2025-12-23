@@ -1,0 +1,30 @@
+version: '3.8'
+
+# Docker Compose cho Redis only
+# Sử dụng khi đã có MySQL local, chỉ cần Redis cho job queue
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: codery-redis
+    restart: always
+    ports:
+      - "6380:6379"  # Port 6380 tránh conflict với Redis local (6379)
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes  # Enable persistence
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - codery-network
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  codery-network:
+    driver: bridge

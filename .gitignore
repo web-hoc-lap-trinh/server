@@ -5,3 +5,5 @@ dist/
 
 ONLINE_JUDGE_API_VI.md
 README.Docker.md
+
+*.md
