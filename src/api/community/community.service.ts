@@ -202,7 +202,7 @@ export const getRepliesByDiscussion = async (
 
     const [replies, total] = await replyRepository.findAndCount({
         where: { discussion_id: discussionId },
-        relations: ['user', 'parent_reply', 'parent_reply.user'], 
+        relations: ['user'], 
         order: {
             created_at: 'ASC',
         },
