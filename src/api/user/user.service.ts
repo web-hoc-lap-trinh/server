@@ -12,11 +12,13 @@ export const getAdminUserList = async (search?: string, sortBy: string = 'newest
       'user.avatar_url',
       'user.status',
       'user.created_at',
-      'user.last_active'
-    ]);
+      'user.last_active',
+      'user.current_streak'
+    ])
+    .where('user.role = :role', { role: 'STUDENT' });
 
   if (search) {
-    query.where('user.full_name LIKE :search', { search: `%${search}%` });
+    query.andWhere('user.full_name LIKE :search', { search: `%${search}%` });
   }
 
   query.orderBy('user.created_at', sortBy === 'newest' ? 'DESC' : 'ASC');

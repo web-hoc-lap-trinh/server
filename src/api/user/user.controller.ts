@@ -26,6 +26,9 @@ import { asyncHandler } from '../../middlewares/errorHandler.middleware';
  *           type: string
  *           format: date-time
  *           nullable: true
+ *         current_streak:
+ *           type: integer
+ *           example: 5
  *         status:
  *           type: string
  *           enum: [ACTIVE, BLOCKED]

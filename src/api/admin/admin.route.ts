@@ -40,6 +40,10 @@ router.use(authMiddleware, checkAdmin);
  *           format: date-time
  *           nullable: true
  *           example: "2025-09-10T04:09:52.000Z"
+ *         current_streak:
+ *           type: integer
+ *           example: 5
+ *           description: "Số ngày streak hiện tại của user"
  *         status:
  *           type: string
  *           enum: [ACTIVE, BLOCKED]
