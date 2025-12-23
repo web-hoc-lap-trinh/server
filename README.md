@@ -1,28 +1,5 @@
 # Server - Codery Platform
 
-## ✨ Recent Updates (November 2024)
-
-### 🏆 Online Judge System (NEW!)
-- ✅ **Code Execution** - Chạy code trong Docker sandbox an toàn
-- ✅ **Multi-language Support** - C, C++, Python, JavaScript, Java
-- ✅ **Auto Judging** - Chấm bài tự động với BullMQ + Redis
-- ✅ **Test Cases** - Hỗ trợ sample và hidden test cases
-- ✅ **Tags System** - Gán tags cho problems
-
-### 🎯 API Standardization & Advanced Exception Handling
-- ✅ **Standardized API Response Format** - All endpoints return consistent JSON structure
-- ✅ **Advanced Exception Handling** - Centralized error handling with custom error classes
-- ✅ **Simplified Routes** - Removed `/auth` prefix from all endpoints
-- ✅ **Unified Login** - Single `/api/login` endpoint for both students and admins
-- ✅ **Password Change without OTP** - Change password using old password verification
-- ✅ **Full TypeScript Support** - Type-safe error handling and responses
-
-📖 **Documentation:**
-- [API_GUIDE.md](./API_GUIDE.md) - Complete API guide
-- [ONLINE_JUDGE_API.md](./ONLINE_JUDGE_API.md) - Online Judge API documentation
-
----
-
 ## 🚀 Cài Đặt và Chạy Project
 
 ### 📋 Yêu cầu hệ thống
