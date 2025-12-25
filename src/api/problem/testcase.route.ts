@@ -11,6 +11,64 @@ const router = Router();
 /**
  * @swagger
  * /api/testcases/{id}:
+ *   get:
+ *     summary: Lấy thông tin test case theo ID
+ *     description: |
+ *       Truy xuất thông tin chi tiết của một test case dựa trên test case ID.
+ *       
+ *       **Yêu cầu:** Quyền Admin
+ *     tags: [Test Cases]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của test case
+ *     responses:
+ *       200:
+ *         description: Lấy thông tin test case thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/TestCase'
+ *             example:
+ *               success: true
+ *               message: Test case retrieved successfully
+ *               data:
+ *                 test_case_id: 1
+ *                 problem_id: 5
+ *                 input_data: "10\n20"
+ *                 expected_output: "30"
+ *                 is_sample: false
+ *                 is_hidden: true
+ *                 explanation: null
+ *                 score: 10
+ *                 created_at: "2024-01-15T10:30:00Z"
+ *       403:
+ *         description: Không có quyền Admin
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Không tìm thấy test case
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               success: false
+ *               error: Test case not found
  *   put:
  *     summary: Cập nhật test case
  *     description: |
@@ -94,6 +152,7 @@ const router = Router();
  *               success: false
  *               error: Test case not found
  */
+router.get('/:id', authMiddleware, checkAdmin, problemController.getTestCaseById);
 router.put('/:id', authMiddleware, checkAdmin, problemController.updateTestCase);
 
 /**

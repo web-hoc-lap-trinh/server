@@ -482,6 +482,41 @@ export const getTestCases = async (req: Request, res: Response, next: NextFuncti
 /**
  * @swagger
  * /api/testcases/{id}:
+ *   get:
+ *     summary: Get a test case by ID
+ *     tags: [Test Cases]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Test case retrieved successfully
+ *       404:
+ *         description: Test case not found
+ */
+export const getTestCaseById = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const testCaseId = parseInt(req.params.id);
+    
+    if (isNaN(testCaseId)) {
+      throw new BadRequestError('Invalid test case ID');
+    }
+
+    const testCase = await problemService.getTestCaseById(testCaseId);
+    return successResponse(res, 'Test case retrieved successfully', testCase);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @swagger
+ * /api/testcases/{id}:
  *   put:
  *     summary: Update a test case
  *     tags: [Test Cases]

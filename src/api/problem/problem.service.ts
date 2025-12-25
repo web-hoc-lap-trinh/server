@@ -418,6 +418,22 @@ export const getTestCases = async (
 };
 
 /**
+ * Get a test case by ID
+ */
+export const getTestCaseById = async (testCaseId: number): Promise<TestCase> => {
+  const testCase = await testCaseRepository.findOne({
+    where: { test_case_id: testCaseId },
+    relations: ['problem'],
+  });
+
+  if (!testCase) {
+    throw new NotFoundError('Test case not found');
+  }
+
+  return testCase;
+};
+
+/**
  * Update a test case
  */
 export const updateTestCase = async (
