@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authMiddleware, checkAdmin } from '../../middlewares/auth.middleware';
 import * as userController from '../user/user.controller';
 import * as statsController from '../admin/stats.controller';
+import * as discussionController from '../admin/discussion.controller';
 
 const router = Router();
 
@@ -243,5 +244,180 @@ router.patch('/users/:id/status', userController.toggleUserStatus);
  *                   example: "Xóa người dùng thành công"
  */
 router.delete('/users/:id', userController.deleteUser);
+
+// ======================================================================
+// DISCUSSIONS (Admin Management)
+// ======================================================================
+
+/**
+ * @swagger
+ * /api/admin/discussions:
+ *   get:
+ *     summary: Lấy danh sách tất cả discussions (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *       - in: query
+ *         name: problem_id
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: lesson_id
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: is_solution
+ *         schema:
+ *           type: boolean
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Tìm kiếm theo tiêu đề
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách discussions thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     total:
+ *                       type: integer
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ */
+router.get('/discussions', discussionController.getAllDiscussions);
+
+/**
+ * @swagger
+ * /api/admin/discussions/{discussionId}/replies:
+ *   get:
+ *     summary: Lấy tất cả replies của một discussion (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: discussionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *     responses:
+ *       200:
+ *         description: Lấy danh sách replies thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     data:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     total:
+ *                       type: integer
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ */
+router.get('/discussions/:discussionId/replies', discussionController.getDiscussionReplies);
+
+/**
+ * @swagger
+ * /api/admin/discussions/{discussionId}/mark-solution:
+ *   patch:
+ *     summary: Đánh dấu discussion là solution (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: discussionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Đánh dấu thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ */
+router.patch('/discussions/:discussionId/mark-solution', discussionController.markAsSolution);
+
+/**
+ * @swagger
+ * /api/admin/discussions/{discussionId}:
+ *   delete:
+ *     summary: Xóa discussion (Admin)
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: discussionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       204:
+ *         description: Xóa thành công
+ */
+router.delete('/discussions/:discussionId', discussionController.deleteDiscussion);
 
 export default router;
