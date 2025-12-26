@@ -69,3 +69,13 @@ export const deleteLesson = asyncHandler(async (req: Request, res: Response) => 
     const result = await lessonService.deleteLesson(lessonId);
     successResponse(res, result.message);
 });
+
+export const getLessonAdmin = asyncHandler(async (req: Request, res: Response) => {
+    const lessonId = parseInt(req.params.lessonId);
+    if (isNaN(lessonId)) {
+        throw new BadRequestError('Invalid Lesson ID');
+    }
+
+    const lesson = await lessonService.getLessonByIdAdmin(lessonId);
+    successResponse(res, 'Lấy chi tiết bài học (Admin) thành công', lesson);
+});
