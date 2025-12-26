@@ -174,3 +174,16 @@ export const deleteLesson = async (lessonId: number) => {
     }
     return { message: 'Xóa Bài học thành công.' };
 };
+
+export const getLessonByIdAdmin = async (lessonId: number) => {
+  const lesson = await lessonRepository.findOne({
+    where: { lesson_id: lessonId }, 
+    relations: ['category', 'tryItYourself', 'tryItYourself.language', 'created_by_user'],
+  });
+
+  if (!lesson) {
+    throw new NotFoundError('Không tìm thấy bài học');
+  }
+
+  return lesson;
+};

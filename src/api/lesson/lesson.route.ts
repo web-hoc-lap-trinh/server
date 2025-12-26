@@ -419,6 +419,35 @@ router.get('/:lessonId', lessonController.getLesson);
 router.put('/:lessonId', authMiddleware, checkAdmin, lessonController.updateLesson);
 router.delete('/:lessonId', authMiddleware, checkAdmin, lessonController.deleteLesson);
 
+/**
+ * @swagger
+ * /api/lessons/admin/{lessonId}:
+ *   get:
+ *     summary: "[ADMIN] Lấy chi tiết bài học (bao gồm cả chưa xuất bản)"
+ *     tags: [Lesson]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID của Bài học
+ *     responses:
+ *       200:
+ *         description: Chi tiết bài học
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/LessonResponse'
+ *       403:
+ *         description: Không có quyền Admin
+ *       404:
+ *         description: Không tìm thấy bài học
+ */
+router.get('/admin/:lessonId', authMiddleware, checkAdmin, lessonController.getLessonAdmin);
+
 // ==========================================
 // TRY IT YOURSELF LESSON-SPECIFIC ROUTES
 // ==========================================
@@ -426,7 +455,7 @@ router.delete('/:lessonId', authMiddleware, checkAdmin, lessonController.deleteL
 /**
  * @swagger
  * /api/lessons/{lessonId}/try-it-yourself:
- *   get:
+ *  get:
  *     summary: Lấy Try It Yourself của một bài học
  *     tags: [Try It Yourself]
  *     parameters:
@@ -652,5 +681,6 @@ router.delete('/:lessonId/try-it-yourself', authMiddleware, checkAdmin, tryItYou
  *         description: Bài học không có Try It Yourself
  */
 router.post('/:lessonId/try-it-yourself/run', tryItYourselfController.runCode);
+
 
 export default router;
