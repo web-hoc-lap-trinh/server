@@ -3,6 +3,7 @@ import { authMiddleware, checkAdmin } from '../../middlewares/auth.middleware';
 import * as userController from '../user/user.controller';
 import * as statsController from '../admin/stats.controller';
 import * as discussionController from '../admin/discussion.controller';
+import * as analyticsController from '../admin/analytics.controller';
 
 const router = Router();
 
@@ -13,6 +14,8 @@ router.use(authMiddleware, checkAdmin);
  * tags:
  *   - name: Admin
  *     description: Quản lý tổng thể dành cho Admin (Dashboard & Users)
+ *   - name: Admin Analytics
+ *     description: API Analytics và Dashboard cho Admin
  */
 
 /**
@@ -419,5 +422,14 @@ router.patch('/discussions/:discussionId/mark-solution', discussionController.ma
  *         description: Xóa thành công
  */
 router.delete('/discussions/:discussionId', discussionController.deleteDiscussion);
+
+// ==========================================
+// ANALYTICS ROUTES - Dashboard Charts & Metrics
+// ==========================================
+
+router.get('/analytics/user-growth', analyticsController.getUserGrowth);
+router.get('/analytics/category-distribution', analyticsController.getCategoryDistribution);
+router.get('/analytics/submission-status', analyticsController.getSubmissionStatus);
+router.get('/analytics/problem-difficulty', analyticsController.getProblemDifficulty);
 
 export default router;
