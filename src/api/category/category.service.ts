@@ -1,6 +1,7 @@
 import { AppDataSource } from '../../config/data-source';
 import { Category } from './category.entity';
-import { NotFoundError } from '../../utils/apiResponse';
+import { NotFoundError, BadRequestError } from '../../utils/apiResponse';
+import uploadToCloudinary from '../../config/cloudinary'; 
 
 const categoryRepository = AppDataSource.getRepository(Category);
 
@@ -24,21 +25,39 @@ export const getCategoryById = async (categoryId: number) => {
     return category;
 };
 
-export const createCategory = async (name: string, order_index?: number, fileDataUri?: string) => {
+export const createCategory = async (name: string, order_index?: number, iconFile?: any) => {
   const category = new Category();
   category.name = name;
   if (typeof order_index !== 'undefined') {
     category.order_index = order_index;
   }
-  if (fileDataUri) {
-    category.icon_url = fileDataUri;
+  
+  if (iconFile) {
+    try {
+      const cloudinaryResponse = await new Promise((resolve, reject) => {
+        const uploadStream = uploadToCloudinary.uploader.upload_stream(
+          { folder: 'categories' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(iconFile.buffer);
+      });
+
+      category.icon_url = (cloudinaryResponse as any).secure_url;
+    } catch (error) {
+      console.error("Cloudinary upload failed:", error);
+      throw new BadRequestError('Upload icon thất bại.');
+    }
   }
+
   category.is_active = true;
   const saved = await categoryRepository.save(category);
   return saved;
 };
 
-export const updateCategory = async (categoryId: number, updateData: Partial<Category>, fileDataUri?: string) => {
+export const updateCategory = async (categoryId: number, updateData: Partial<Category>, iconFile?: any) => {
   const category = await categoryRepository.findOne({
     where: { category_id: categoryId },
   });
@@ -47,8 +66,24 @@ export const updateCategory = async (categoryId: number, updateData: Partial<Cat
     throw new NotFoundError('Không tìm thấy Chủ đề.');
   }
 
-  if (fileDataUri) {
-    category.icon_url = fileDataUri;
+  if (iconFile) {
+    try {
+      const cloudinaryResponse = await new Promise((resolve, reject) => {
+        const uploadStream = uploadToCloudinary.uploader.upload_stream(
+          { folder: 'categories' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        uploadStream.end(iconFile.buffer);
+      });
+
+      category.icon_url = (cloudinaryResponse as any).secure_url;
+    } catch (error) {
+      console.error("Cloudinary upload failed:", error);
+      throw new BadRequestError('Upload icon thất bại.');
+    }
   }
 
   Object.assign(category, updateData);
