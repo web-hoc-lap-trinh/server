@@ -21,3 +21,4 @@ export const getActivitiesHistory = asyncHandler(async (req: Request, res: Respo
 
     successResponse(res, 'Fetched activities history successfully', result);
 });
+
