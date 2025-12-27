@@ -40,10 +40,18 @@ export const createCategory = asyncHandler(async (req: Request, res: Response) =
 
 export const updateCategory = asyncHandler(async (req: Request, res: Response) => {
     const categoryId = parseInt(req.params.categoryId);
-    const updateData = req.body;
-    const iconFile = req.file; 
-    delete updateData.fileDataUri;
     
+    const { name, order_index, is_active } = req.body; 
+    const iconFile = req.file; 
+    
+    const updateData: any = {};
+    if (name) updateData.name = name;
+    if (order_index !== undefined) updateData.order_index = parseInt(order_index);
+
+    if (is_active !== undefined) {
+        updateData.is_active = (String(is_active) === 'true');
+    }
+
     const updatedCategory = await categoryService.updateCategory(categoryId, updateData, iconFile as any);
     successResponse(res, 'Cập nhật Chủ đề thành công', updatedCategory);
 });
