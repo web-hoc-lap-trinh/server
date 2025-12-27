@@ -20,6 +20,7 @@ import { User } from '../../user/user.entity';
 import * as dockerRunner from './docker-runner.service';
 import * as submissionService from '../submission.service';
 import { emitSubmissionStatusUpdate } from '../../../realtime/events';
+import * as dailyActivityService from '../../daily_activities/daily_activity.service';
 
 const submissionRepository = AppDataSource.getRepository(Submission);
 const problemRepository = AppDataSource.getRepository(Problem);
@@ -349,8 +350,14 @@ async function updateProgressAndStats(
     }
 
     // Update daily activity (if table exists)
-    await updateDailyActivity(userId, isAccepted, pointsEarned);
-
+    if (isAccepted) {
+        await dailyActivityService.updateActivityAndStreak(
+            userId,
+            problemId,
+            pointsEarned,
+            isAccepted
+        );
+    }
     // Update user_progress table
     await updateUserProgress(userId, problemId, isAccepted, pointsEarned);
   } catch (error) {

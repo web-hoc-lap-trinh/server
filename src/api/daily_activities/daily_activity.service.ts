@@ -2,7 +2,7 @@ import { AppDataSource } from '../../config/data-source';
 import { DailyActivity } from './daily_activity.entity';
 import { User } from '../user/user.entity';
 import { Problem } from '../problem/problem.entity';
-import { getFormattedDate, getYesterdayDate } from '../../utils/date.utils'; 
+import { getFormattedDate, getYesterdayDate } from '../../utils/date.utils';
 import { NotFoundError } from '../../utils/apiResponse';
 import { getPaginationOptions } from '../../utils/pagination';
 
@@ -10,82 +10,59 @@ const dailyActivityRepository = AppDataSource.getRepository(DailyActivity);
 const userRepository = AppDataSource.getRepository(User);
 const problemRepository = AppDataSource.getRepository(Problem);
 
+/**
+ * Update daily activity & streak when user solves a problem
+ */
 export const updateActivityAndStreak = async (
     userId: number,
     problemId: number,
     pointsEarned: number,
     isAccepted: boolean
 ): Promise<void> => {
+
+    // ❌ Không AC thì bỏ
+    if (!isAccepted) return;
+
     const today = new Date();
     const todayDate = getFormattedDate(today);
-    const yesterdayDate = getFormattedDate(getYesterdayDate(today)); 
+    const yesterdayDate = getFormattedDate(getYesterdayDate(today));
 
-    const problem = await problemRepository.findOne({ 
+    // 1️⃣ Lấy thông tin bài
+    const problem = await problemRepository.findOne({
         where: { problem_id: problemId },
-        select: ['problem_id', 'is_daily_challenge', 'challenge_date']
+        select: ['problem_id', 'is_daily_challenge'],
     });
 
-    const challengeDateString = problem?.challenge_date 
-        ? getFormattedDate(problem.challenge_date as Date) 
-        : null;
+    if (!problem) {
+        throw new NotFoundError('Không tìm thấy bài tập.');
+    }
 
-    const isDailyChallengeCompleted = problem?.is_daily_challenge 
-        && challengeDateString === todayDate;
+    const isDailyChallenge = Boolean(problem.is_daily_challenge);
 
-
-    let todayActivity = await dailyActivityRepository.findOneBy({ 
-        user_id: userId, 
-        activity_date: todayDate 
+    // 2️⃣ Lấy activity hôm nay (nếu có)
+    let todayActivity = await dailyActivityRepository.findOneBy({
+        user_id: userId,
+        activity_date: todayDate,
     });
 
+    // 3️⃣ Luôn update số bài + điểm
     if (todayActivity) {
-        // KHẮC PHỤC LỖI TS(2345): Dùng Query Builder để cập nhật nhiều cột
         await dailyActivityRepository
             .createQueryBuilder()
             .update(DailyActivity)
             .set({
-                problems_solved: () => "problems_solved + 1",
+                problems_solved: () => 'problems_solved + 1',
                 points_earned: () => `points_earned + ${pointsEarned}`,
             })
-            .where("activity_id = :id", { id: todayActivity.activity_id })
+            .where('activity_id = :id', { id: todayActivity.activity_id })
             .execute();
+    }
 
+    // 4️⃣ XỬ LÝ STREAK (chỉ khi là Daily Challenge & chưa tính trong ngày)
+    if (isDailyChallenge && (!todayActivity || todayActivity.streak_day === 0)) {
 
-        if (isDailyChallengeCompleted && todayActivity.streak_day === 0) {
-            let newStreak = 1;
-            const yesterdayActivity = await dailyActivityRepository.findOneBy({
-                user_id: userId,
-                activity_date: yesterdayDate,
-            });
+        let newStreak = 1;
 
-            if (yesterdayActivity && yesterdayActivity.streak_day > 0) {
-                newStreak = yesterdayActivity.streak_day + 1;
-            }
-
-            await dailyActivityRepository.update(
-                { activity_id: todayActivity.activity_id },
-                { streak_day: newStreak }
-            );
-
-            await userRepository
-                .createQueryBuilder()
-                .update(User)
-                .set({
-                    current_streak: newStreak,
-                    max_streak: () => `GREATEST(max_streak, ${newStreak})`,
-                })
-                .where('user_id = :userId', { userId })
-                .execute();
-        }
-
-        return; 
-    } 
-
-
-    let newStreak = 0;
-    
-    if (isDailyChallengeCompleted) {
-        newStreak = 1;
         const yesterdayActivity = await dailyActivityRepository.findOneBy({
             user_id: userId,
             activity_date: yesterdayDate,
@@ -95,6 +72,7 @@ export const updateActivityAndStreak = async (
             newStreak = yesterdayActivity.streak_day + 1;
         }
 
+        // Update User streak
         await userRepository
             .createQueryBuilder()
             .update(User)
@@ -104,20 +82,42 @@ export const updateActivityAndStreak = async (
             })
             .where('user_id = :userId', { userId })
             .execute();
-    } else {
-        newStreak = 0; 
+
+        // Update hoặc tạo DailyActivity hôm nay
+        if (todayActivity) {
+            await dailyActivityRepository.update(
+                { activity_id: todayActivity.activity_id },
+                { streak_day: newStreak }
+            );
+        } else {
+            todayActivity = dailyActivityRepository.create({
+                user_id: userId,
+                activity_date: todayDate,
+                problems_solved: 1,
+                streak_day: newStreak,
+                points_earned: pointsEarned,
+            });
+            await dailyActivityRepository.save(todayActivity);
+            return;
+        }
     }
-    
-    todayActivity = dailyActivityRepository.create({
-        user_id: userId,
-        activity_date: todayDate,
-        problems_solved: 1, 
-        streak_day: newStreak,
-        points_earned: pointsEarned
-    });
-    await dailyActivityRepository.save(todayActivity);
+
+    // 5️⃣ Nếu hôm nay CHƯA có activity → tạo mới (không daily)
+    if (!todayActivity) {
+        todayActivity = dailyActivityRepository.create({
+            user_id: userId,
+            activity_date: todayDate,
+            problems_solved: 1,
+            streak_day: 0,
+            points_earned: pointsEarned,
+        });
+        await dailyActivityRepository.save(todayActivity);
+    }
 };
 
+/**
+ * Get today activity
+ */
 export const getDailyActivity = async (userId: number) => {
     const todayDate = getFormattedDate(new Date());
 
@@ -129,7 +129,7 @@ export const getDailyActivity = async (userId: number) => {
             'lessons_completed',
             'streak_day',
             'points_earned',
-            'time_spent'
+            'time_spent',
         ],
     });
 
@@ -140,6 +140,9 @@ export const getDailyActivity = async (userId: number) => {
     return activity;
 };
 
+/**
+ * Get activity history
+ */
 export const getActivitiesHistory = async (
     userId: number,
     page: number = 1,
@@ -160,4 +163,4 @@ export const getActivitiesHistory = async (
         page,
         limit,
     };
-}
+};
