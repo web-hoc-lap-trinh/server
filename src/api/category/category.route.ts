@@ -5,15 +5,21 @@ import { uploadSingleImage } from '../../middlewares/fileUpload.middleware';
 
 const router = Router();
 
+/* ======================================================
+   ADMIN ROUTES (Cần đăng nhập + Quyền Admin)
+====================================================== */
+
 /**
  * @swagger
- * /api/categories:
+ * /api/categories/admin:
  *   get:
- *     summary: "Lấy danh sách tất cả các Chủ đề đang hoạt động"
+ *     summary: "[ADMIN] Lấy danh sách tất cả Chủ đề (bao gồm cả ẩn)"
  *     tags: [Category]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: Danh sách chủ đề
+ *         description: Danh sách đầy đủ Chủ đề
  *         content:
  *           application/json:
  *             schema:
@@ -24,14 +30,64 @@ const router = Router();
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: Categories fetched successfully
  *                 data:
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Category'
- *
+ *       403:
+ *         description: Không có quyền Admin
+ */
+router.get(
+  '/admin',
+  authMiddleware,
+  checkAdmin,
+  categoryController.getCategoriesAdmin
+);
+
+/**
+ * @swagger
+ * /api/categories/admin/{categoryId}:
+ *   get:
+ *     summary: "[ADMIN] Lấy chi tiết Chủ đề (kể cả inactive)"
+ *     tags: [Category]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Chi tiết Chủ đề
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Category'
+ *       404:
+ *         description: Không tìm thấy Chủ đề
+ */
+router.get(
+  '/admin/:categoryId',
+  authMiddleware,
+  checkAdmin,
+  categoryController.getCategoryAdmin
+);
+
+/**
+ * @swagger
+ * /api/categories:
  *   post:
- *     summary: "[ADMIN] Tạo mới một Chủ đề"
+ *     summary: "[ADMIN] Tạo mới Chủ đề"
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -44,32 +100,15 @@ const router = Router();
  *             properties:
  *               name:
  *                 type: string
- *                 description: Tên chủ đề
  *               order_index:
  *                 type: integer
- *                 description: Thứ tự hiển thị
  *               icon_file:
  *                 type: string
  *                 format: binary
- *                 description: File icon (image/jpeg, image/png)
  *     responses:
  *       201:
  *         description: Tạo mới thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *                 data:
- *                   $ref: '#/components/schemas/Category'
- *       403:
- *         description: Không có quyền Admin
  */
-router.get('/', categoryController.getCategories);
 router.post(
   '/',
   authMiddleware,
@@ -81,37 +120,8 @@ router.post(
 /**
  * @swagger
  * /api/categories/{categoryId}:
- *   get:
- *     summary: "Lấy chi tiết một Chủ đề"
- *     tags: [Category]
- *     parameters:
- *       - in: path
- *         name: categoryId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID của Chủ đề
- *     responses:
- *       200:
- *         description: Chi tiết chủ đề
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Category fetched successfully
- *                 data:
- *                   $ref: '#/components/schemas/Category'
- *       404:
- *         description: Không tìm thấy Chủ đề
- *
  *   put:
- *     summary: "[ADMIN] Cập nhật thông tin Chủ đề"
+ *     summary: "[ADMIN] Cập nhật Chủ đề"
  *     tags: [Category]
  *     security:
  *       - bearerAuth: []
@@ -121,7 +131,6 @@ router.post(
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID của Chủ đề
  *     requestBody:
  *       required: true
  *       content:
@@ -141,22 +150,18 @@ router.post(
  *     responses:
  *       200:
  *         description: Cập nhật thành công
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 message:
- *                   type: string
- *                   example: Cập nhật Chủ đề thành công
- *                 data:
- *                   $ref: '#/components/schemas/Category'
- *       404:
- *         description: Không tìm thấy Chủ đề
- *
+ */
+router.put(
+  '/:categoryId',
+  authMiddleware,
+  checkAdmin,
+  uploadSingleImage('icon_file'),
+  categoryController.updateCategory
+);
+
+/**
+ * @swagger
+ * /api/categories/{categoryId}:
  *   delete:
  *     summary: "[ADMIN] Xóa (Deactivate) Chủ đề"
  *     tags: [Category]
@@ -168,10 +173,32 @@ router.post(
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID của Chủ đề
  *     responses:
  *       200:
  *         description: Xóa thành công
+ *       404:
+ *         description: Không tìm thấy Chủ đề
+ */
+router.delete(
+  '/:categoryId',
+  authMiddleware,
+  checkAdmin,
+  categoryController.deleteCategory
+);
+
+/* ======================================================
+   PUBLIC ROUTES (Ai cũng xem được)
+====================================================== */
+
+/**
+ * @swagger
+ * /api/categories:
+ *   get:
+ *     summary: "Lấy danh sách Chủ đề đang hoạt động"
+ *     tags: [Category]
+ *     responses:
+ *       200:
+ *         description: Danh sách Chủ đề active
  *         content:
  *           application/json:
  *             schema:
@@ -179,25 +206,34 @@ router.post(
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 message:
  *                   type: string
- *                   example: Xóa (Deactivate) Chủ đề thành công.
- *       404:
- *         description: Không tìm thấy Chủ đề
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Category'
  */
-router.get('/:categoryId', categoryController.getCategory);
-router.put(
-  '/:categoryId',
-  authMiddleware,
-  checkAdmin,
-  uploadSingleImage('icon_file'),
-  categoryController.updateCategory
-);
-router.delete(
-  '/:categoryId',
-  authMiddleware,
-  checkAdmin,
-  categoryController.deleteCategory
-);
+router.get('/', categoryController.getCategoriesPublic);
+
+/**
+ * @swagger
+ * /api/categories/{categoryId}:
+ *   get:
+ *     summary: "Lấy chi tiết Chủ đề (Public)"
+ *     tags: [Category]
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Chi tiết Chủ đề
+ *       404:
+ *         description: Không tìm thấy hoặc Chủ đề đã bị ẩn
+ */
+router.get('/:categoryId', categoryController.getCategoryPublic);
 
 export default router;
