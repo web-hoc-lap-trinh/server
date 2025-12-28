@@ -165,7 +165,7 @@ router.post('/upload-media', authMiddleware, checkAdmin, upload.single('media'),
  *       403:
  *         description: Không có quyền Admin
  */
-router.get('/', lessonController.getPublishedLessons); 
+router.get('/', lessonController.getPublishedLessons);
 router.post('/', authMiddleware, checkAdmin, lessonController.createLesson);
 
 /**
