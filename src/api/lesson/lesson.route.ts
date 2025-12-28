@@ -455,7 +455,7 @@ router.get('/admin/:lessonId', authMiddleware, checkAdmin, lessonController.getL
 /**
  * @swagger
  * /api/lessons/{lessonId}/try-it-yourself:
- *  get:
+ *   get:
  *     summary: Lấy Try It Yourself của một bài học
  *     tags: [Try It Yourself]
  *     parameters:
