@@ -20,5 +20,8 @@ export const AppDataSource = new DataSource({
   ],
   subscribers: [],
   migrationsTableName: 'migrations',
-  migrationsRun: false, // Sẽ được xử lý thủ công trong server.ts
+  ssl: {
+    rejectUnauthorized: false,
+  },
+  migrationsRun: false,
 });
