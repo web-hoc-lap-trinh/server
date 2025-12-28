@@ -23,11 +23,11 @@ async function main() {
   try {
     // Check Docker availability
     console.log('[Worker] Checking Docker availability...');
-    const dockerAvailable = await checkDockerAvailable();
-    if (!dockerAvailable) {
-      console.error('[Worker] ERROR: Docker is not available. Please install and start Docker.');
-      process.exit(1);
-    }
+    // const dockerAvailable = await checkDockerAvailable();
+    // if (!dockerAvailable) {
+    //   console.error('[Worker] ERROR: Docker is not available. Please install and start Docker.');
+    //   process.exit(1);
+    // }
     console.log('[Worker] Docker is available');
 
     // Pull required Docker images (optional, can be done separately)

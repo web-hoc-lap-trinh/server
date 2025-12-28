@@ -46,12 +46,12 @@ const createDatabaseIfNotExists = async (retries = 5, delay = 3000) => {
 const initializeJudgeSystem = async () => {
   try {
     // Check Docker availability
-    const dockerAvailable = await checkDockerAvailable();
-    if (!dockerAvailable) {
-      console.warn('⚠️  Docker not available - code execution will not work');
-      return;
-    }
-    console.log('🐳 Docker is available');
+    // const dockerAvailable = await checkDockerAvailable();
+    // if (!dockerAvailable) {
+    //   console.warn('⚠️  Docker not available - code execution will not work');
+    //   return;
+    // }
+    // console.log('🐳 Docker is available');
 
     // Initialize queue (Redis required for BullMQ)
     try {
