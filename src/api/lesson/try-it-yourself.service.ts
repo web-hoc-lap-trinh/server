@@ -186,16 +186,17 @@ export const runCode = async (
     throw new BadRequestError(`Language '${language.code}' is not supported for execution`);
   }
 
-  // Execute code in Docker
+  // Execute code directly (modified for Render support)
+  // We pass empty strings for unused docker params
   const executionResult: ExecutionResult = await executeInDocker({
     language: language.code,
     sourceCode: data.source_code,
     input: data.input || '',
     timeLimit: 5000, // 5 seconds for Try It Yourself
     memoryLimit: 256, // 256MB for Try It Yourself
-    dockerImage: langConfig.dockerImage,
-    compileCommand: langConfig.compileCommand,
-    runCommand: langConfig.runCommand,
+    dockerImage: '', // [FIXED] Not used in direct execution
+    compileCommand: '', // [FIXED] Not used in direct execution
+    runCommand: '', // [FIXED] Not used in direct execution
     fileExtension: langConfig.fileExtension,
   });
 
@@ -259,16 +260,16 @@ export const runCodeDirect = async (
     throw new BadRequestError(`Language '${languageCode}' is not supported for execution`);
   }
 
-  // Execute code in Docker
+  // Execute code directly (modified for Render support)
   const executionResult: ExecutionResult = await executeInDocker({
     language: languageCode,
     sourceCode,
     input: input || '',
     timeLimit: 5000, // 5 seconds
     memoryLimit: 256, // 256MB
-    dockerImage: langConfig.dockerImage,
-    compileCommand: langConfig.compileCommand,
-    runCommand: langConfig.runCommand,
+    dockerImage: '', // [FIXED] Not used in direct execution
+    compileCommand: '', // [FIXED] Not used in direct execution
+    runCommand: '', // [FIXED] Not used in direct execution
     fileExtension: langConfig.fileExtension,
   });
 
