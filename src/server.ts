@@ -9,7 +9,7 @@ import { initializeQueue, startWorker } from './api/submission/services/queue.se
 import { checkDockerAvailable } from './api/submission/services/docker-runner.service';
 import http from 'http';
 import { initializeRealtimeServer } from './realtime';
-import { schedulerService } from './services/scheduler.service'; 
+import { schedulerService } from './api/daily_activities/scheduler.service'; 
 
 const PORT = process.env.PORT || 3000;
 const ENABLE_WORKER = process.env.ENABLE_WORKER !== 'false'; // Enable by default

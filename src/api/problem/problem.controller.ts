@@ -634,7 +634,7 @@ export const getDailyChallengeProblem = async (req: Request, res: Response, next
  */
 export const updateDailyChallenges = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { schedulerService } = await import('../../services/scheduler.service');
+        const { schedulerService } = await import('../daily_activities/scheduler.service');
         await schedulerService.runDailyChallengeNow();
         
         return successResponse(res, 'Daily Challenges updated successfully'); 
