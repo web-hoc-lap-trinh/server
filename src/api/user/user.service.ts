@@ -1,10 +1,18 @@
 import { AppDataSource } from '../../config/data-source';
 import { User } from './user.entity';
 import { NotFoundError } from '../../utils/apiResponse';
+import { getPaginationOptions } from '../../utils/pagination';
 
 const userRepository = AppDataSource.getRepository(User);
 
-export const getAdminUserList = async (search?: string, sortBy: string = 'newest') => {
+export const getAdminUserList = async (
+  search?: string,
+  sortBy: string = 'newest',
+  page: number = 1,
+  limit: number = 20
+) => {
+  const { skip, take } = getPaginationOptions(page, limit);
+
   const query = userRepository.createQueryBuilder('user')
     .select([
       'user.user_id',
@@ -22,7 +30,19 @@ export const getAdminUserList = async (search?: string, sortBy: string = 'newest
   }
 
   query.orderBy('user.created_at', sortBy === 'newest' ? 'DESC' : 'ASC');
-  return await query.getMany();
+
+  const [users, total] = await query
+    .skip(skip)
+    .take(take)
+    .getManyAndCount();
+
+  return {
+    users,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
+  };
 };
 
 export const updateUserStatus = async (id: number, status: string) => {

@@ -157,7 +157,7 @@ export const createProblem = async (req: Request, res: Response, next: NextFunct
  */
 export const getProblems = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { page, limit, difficulty, tag_id, tag, search } = req.query;
+    const { page, limit, difficulty, tag_id, tag, search, sort, order } = req.query;
 
     const filters = {
       page: page ? parseInt(page as string) : undefined,
@@ -167,6 +167,8 @@ export const getProblems = async (req: Request, res: Response, next: NextFunctio
       tag_slug: tag as string | undefined,
       search: search as string | undefined,
       is_published: req.user?.role !== 'ADMIN' ? true : undefined,
+      sort: sort as string | undefined,
+      order: (order as string)?.toUpperCase() as 'ASC' | 'DESC' | undefined,
     };
 
     const { problems, total } = await problemService.getProblems(filters);

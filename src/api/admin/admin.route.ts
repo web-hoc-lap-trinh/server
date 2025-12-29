@@ -152,6 +152,18 @@ router.get('/stats', statsController.getAdminStats);
  *         schema:
  *           type: string
  *           enum: [newest, oldest]
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Số trang
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Số người dùng mỗi trang
  *     responses:
  *       200:
  *         description: Lấy danh sách người dùng thành công
@@ -167,9 +179,23 @@ router.get('/stats', statsController.getAdminStats);
  *                   type: string
  *                   example: "Lấy danh sách thành công"
  *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/AdminUserResponse'
+ *                   type: object
+ *                   properties:
+ *                     users:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/AdminUserResponse'
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
  */
 router.get('/users', userController.listUsersForAdmin);
 

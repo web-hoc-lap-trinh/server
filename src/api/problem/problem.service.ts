@@ -66,6 +66,8 @@ export interface ProblemFilters {
   search?: string;
   page?: number;
   limit?: number;
+  sort?: string;
+  order?: 'ASC' | 'DESC';
 }
 
 // ==========================================
@@ -239,9 +241,24 @@ export const getProblems = async (filters: ProblemFilters): Promise<{ problems: 
   // Get total count
   const total = await queryBuilder.getCount();
 
-  // Apply pagination
+  // Apply sorting
+  const sortField = filters.sort || 'created_at';
+  const sortOrder = filters.order || 'DESC';
+
+  // Map sort fields to actual column names
+  const sortFieldMap: { [key: string]: string } = {
+    'created_at': 'problem.created_at',
+    'title': 'problem.title',
+    'difficulty': 'problem.difficulty',
+    'submission_count': 'problem.total_submissions',
+    'accepted_count': 'problem.accepted_submissions',
+  };
+
+  const actualSortField = sortFieldMap[sortField] || 'problem.created_at';
+
+  // Apply pagination and sorting
   const problems = await queryBuilder
-    .orderBy('problem.created_at', 'DESC')
+    .orderBy(actualSortField, sortOrder)
     .skip(skip)
     .take(limit)
     .getMany();

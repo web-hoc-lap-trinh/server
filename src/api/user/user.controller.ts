@@ -37,14 +37,24 @@ import { asyncHandler } from '../../middlewares/errorHandler.middleware';
 
 export const listUsersForAdmin = asyncHandler(
   async (req: Request, res: Response) => {
-    const { search, sort } = req.query;
+    const { search, sort, page, limit } = req.query;
 
-    const users = await userService.getAdminUserList(
+    const result = await userService.getAdminUserList(
       search as string,
-      sort as string
+      sort as string,
+      page ? parseInt(page as string) : 1,
+      limit ? parseInt(limit as string) : 20
     );
 
-    successResponse(res, 'Lấy danh sách thành công', users);
+    successResponse(res, 'Lấy danh sách thành công', {
+      users: result.users,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+    });
   }
 );
 
