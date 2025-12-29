@@ -94,8 +94,17 @@ const startServer = async () => {
 
     if (pendingMigrations) {
       console.log('📦 Running pending migrations...');
-      await AppDataSource.runMigrations();
-      console.log('✅ Migrations executed successfully');
+      try {
+        await AppDataSource.runMigrations();
+        console.log('✅ Migrations executed successfully');
+      } catch (error: any) {
+        // Nếu lỗi duplicate column, bỏ qua và tiếp tục
+        if (error.code === 'ER_DUP_FIELDNAME' || error.message?.includes('Duplicate column')) {
+          console.warn('⚠️  Migration warning: Column already exists, skipping...');
+        } else {
+          throw error; // Throw lại lỗi khác
+        }
+      }
     } else {
       console.log('✅ Database is up to date');
     }
