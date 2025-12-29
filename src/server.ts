@@ -24,6 +24,9 @@ const createDatabaseIfNotExists = async (retries = 5, delay = 3000) => {
         port: parseInt(process.env.DB_PORT || '3306'),
         user: process.env.DB_USER,
         password: process.env.DB_PASSWORD,
+        ssl: {
+          rejectUnauthorized: false,
+        },
       });
 
       // Tạo database nếu chưa tồn tại
