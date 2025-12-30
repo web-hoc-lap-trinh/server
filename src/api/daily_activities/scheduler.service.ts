@@ -6,7 +6,7 @@ export const schedulerService = {
         console.log('🕒 Current Server Time:', new Date().toString());
         console.log('⏳ Daily Challenge Scheduler initialized...');
         
-        cron.schedule('* * * * *', async () => {
+        cron.schedule('0 0 * * *', async () => {
             console.log('⏰ Triggering Daily Challenge update...');
             try {
                 await dailyChallengeService.updateDailyChallenges();
